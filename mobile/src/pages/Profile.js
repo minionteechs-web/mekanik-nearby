@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
     TouchableOpacity,
     ScrollView,
     SafeAreaView,
@@ -25,11 +24,12 @@ import {
     Mail,
     Shield,
 } from 'lucide-react-native';
-import { COLORS, SPACING, RADIUS } from '../constants/theme';
+import { SPACING, RADIUS } from '../constants/theme';
+import { useThemedStyles } from '../hooks/useThemedStyles';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
-import { ProfileAvatar } from '../components/ProfileAvatar';
+import { ProfilePhotoPicker } from '../components/ProfilePhotoPicker';
 import { t, setLanguage, getCurrentLang } from '../utils/i18n';
 import { useAuth } from '../utils/authContext';
 import { auth as authApi } from '../utils/api';
@@ -41,9 +41,137 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { BrandLogo } from '../components/BrandLogo';
 import { useTheme } from '../utils/themeContext';
 
+const vehicleMakeModelValue = (prefs) => {
+    const make = prefs.vehicleMake || '';
+    const model = prefs.vehicleModel || '';
+    return [make, model].filter(Boolean).join(' ');
+};
+
+const createStyles = (colors) => ({
+    container: { flex: 1 },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: SPACING.xl,
+        paddingBottom: SPACING.md,
+        paddingTop: SPACING.md,
+        gap: SPACING.md,
+    },
+    headerTitle: { fontSize: 20, fontWeight: '800', color: colors.textMain, flex: 1 },
+    fieldRow: { flexDirection: 'row', gap: SPACING.sm, width: '100%' },
+    fieldHalf: { flex: 1, minWidth: 0 },
+    scroll: { padding: SPACING.xl, paddingTop: 0, paddingBottom: SPACING.xxl },
+    userCard: { alignItems: 'center', marginBottom: SPACING.xl, marginTop: SPACING.md },
+    userName: { fontSize: 22, fontWeight: '700', color: colors.textMain, marginTop: SPACING.md },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+    userEmail: { fontSize: 14, color: colors.textMuted },
+    roleBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: SPACING.md,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: RADIUS.pill,
+        backgroundColor: colors.bgElevated,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    roleText: { fontSize: 11, fontWeight: '800', color: colors.textMain, textTransform: 'uppercase' },
+    sectionTitle: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: colors.textMuted,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: SPACING.sm,
+        marginTop: SPACING.md,
+    },
+    formCard: { padding: SPACING.xl, marginBottom: SPACING.md },
+    offlineCard: { padding: SPACING.xl, marginBottom: SPACING.lg },
+    offlineHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    offlineSub: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
+    routesList: { marginTop: SPACING.lg, gap: 8 },
+    routeItem: {
+        flexDirection: 'row',
+        backgroundColor: colors.inputBg,
+        borderRadius: RADIUS.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        overflow: 'hidden',
+    },
+    routeMain: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        padding: SPACING.md,
+    },
+    routeInfo: { flex: 1, minWidth: 0 },
+    routeLabel: { fontSize: 14, fontWeight: '600', color: colors.textMain },
+    routeMeta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+    routeDelete: {
+        width: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+    },
+    clearBtn: { marginTop: SPACING.md },
+    clearBtnText: { color: colors.danger, fontSize: 12, fontWeight: '700' },
+    settingsCard: { padding: 0, overflow: 'hidden', marginBottom: SPACING.md },
+    settingItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: SPACING.xl,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    settingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+    settingLabel: { fontSize: 16, fontWeight: '600', color: colors.textMain },
+    langSelector: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' },
+    langBtn: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    langBtnActive: { borderColor: colors.brand, backgroundColor: `${colors.brand}1A` },
+    langText: { fontSize: 10, color: colors.textMuted, fontWeight: '800' },
+    langTextActive: { color: colors.brand },
+    passwordBox: { padding: SPACING.xl, paddingTop: 0, borderBottomWidth: 1, borderBottomColor: colors.border },
+    helpCard: {
+        flexDirection: 'row',
+        gap: 12,
+        padding: SPACING.xl,
+        marginBottom: SPACING.lg,
+        alignItems: 'flex-start',
+    },
+    helpTitle: { fontSize: 15, fontWeight: '700', color: colors.textMain },
+    helpText: { fontSize: 12, color: colors.textMuted, marginTop: 4, lineHeight: 18 },
+    logoutRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: SPACING.xl,
+        borderRadius: RADIUS.md,
+        borderWidth: 1,
+        borderColor: 'rgba(239, 68, 68, 0.3)',
+        backgroundColor: 'rgba(239, 68, 68, 0.06)',
+    },
+    logoutText: { fontSize: 16, fontWeight: '700', color: colors.danger },
+    infoBox: { marginTop: 40, alignItems: 'center', gap: 8 },
+    infoTitle: { color: colors.textSubtle, fontSize: 12, fontWeight: '700' },
+    infoText: { color: colors.textSubtle, fontSize: 11, marginTop: 4, textAlign: 'center' },
+});
+
 export const Profile = ({ navigation }) => {
     const { user, logout, updateUser } = useAuth();
     const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const [lang, setLang] = useState(getCurrentLang());
     const [savedRoutes, setSavedRoutes] = useState([]);
     const [loadingRoutes, setLoadingRoutes] = useState(true);
@@ -114,9 +242,10 @@ export const Profile = ({ navigation }) => {
         }
     };
 
-    const handleSavePrefs = async (updates) => {
+    const handleSavePrefs = async (updates, notify = false) => {
         const next = await saveProfilePrefs({ ...prefs, ...updates });
         setPrefs(next);
+        if (notify) Alert.alert('Saved', 'Preferences saved.');
     };
 
     const handleChangePassword = async () => {
@@ -143,26 +272,31 @@ export const Profile = ({ navigation }) => {
         <ScreenLayout navigation={navigation} currentRoute="Profile">
             <SafeAreaView style={[styles.container, { backgroundColor: colors.bgDark }]}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>{t('profile')}</Text>
+                    <Text style={styles.headerTitle}>Profile & Settings</Text>
                     <ThemeToggle compact />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scroll}>
                     <View style={styles.userCard}>
-                        <ProfileAvatar name={displayName} size={88} />
+                        <ProfilePhotoPicker
+                            name={displayName}
+                            avatarUrl={user?.avatar_url}
+                            onUpdated={async (next) => { await updateUser(next); }}
+                            size={88}
+                        />
                         <Text style={styles.userName}>{displayName}</Text>
                         <View style={styles.metaRow}>
-                            <Mail size={13} color={COLORS.textMuted} />
+                            <Mail size={13} color={colors.textMuted} />
                             <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
                         </View>
                         {user?.phone ? (
                             <View style={styles.metaRow}>
-                                <Phone size={13} color={COLORS.textMuted} />
+                                <Phone size={13} color={colors.textMuted} />
                                 <Text style={styles.userEmail}>{user.phone}</Text>
                             </View>
                         ) : null}
                         <View style={styles.roleBadge}>
-                            <Shield size={11} color={COLORS.brand} />
+                            <Shield size={11} color={colors.brand} />
                             <Text style={styles.roleText}>{user?.role || 'driver'}</Text>
                         </View>
                     </View>
@@ -176,6 +310,11 @@ export const Profile = ({ navigation }) => {
                             onChangeText={setPhone}
                             keyboardType="phone-pad"
                             placeholder="+234 800 000 0000"
+                        />
+                        <Input
+                            label="Email"
+                            value={user?.email || ''}
+                            readOnly
                         />
                         <Button onPress={handleSaveAccount} disabled={savingAccount}>
                             {savingAccount ? 'Saving...' : 'Save account'}
@@ -196,16 +335,17 @@ export const Profile = ({ navigation }) => {
                             keyboardType="phone-pad"
                         />
                         <Input
-                            label="Vehicle make"
-                            value={prefs.vehicleMake || ''}
-                            onChangeText={(v) => setPrefs({ ...prefs, vehicleMake: v })}
-                            placeholder="Toyota"
-                        />
-                        <Input
-                            label="Vehicle model"
-                            value={prefs.vehicleModel || ''}
-                            onChangeText={(v) => setPrefs({ ...prefs, vehicleModel: v })}
-                            placeholder="Corolla"
+                            label="Vehicle make & model"
+                            value={vehicleMakeModelValue(prefs)}
+                            onChangeText={(v) => {
+                                const [make, ...rest] = v.trim().split(/\s+/);
+                                setPrefs({
+                                    ...prefs,
+                                    vehicleMake: make || '',
+                                    vehicleModel: rest.join(' '),
+                                });
+                            }}
+                            placeholder="Toyota Corolla"
                         />
                         <View style={styles.fieldRow}>
                             <View style={styles.fieldHalf}>
@@ -214,18 +354,20 @@ export const Profile = ({ navigation }) => {
                                     value={prefs.vehiclePlate || ''}
                                     onChangeText={(v) => setPrefs({ ...prefs, vehiclePlate: v })}
                                     placeholder="ABC-123XY"
+                                    style={{ marginBottom: 0 }}
                                 />
                             </View>
                             <View style={styles.fieldHalf}>
                                 <Input
-                                    label="Vehicle color"
+                                    label="Color"
                                     value={prefs.vehicleColor || ''}
                                     onChangeText={(v) => setPrefs({ ...prefs, vehicleColor: v })}
                                     placeholder="Silver"
+                                    style={{ marginBottom: 0 }}
                                 />
                             </View>
                         </View>
-                        <Button variant="secondary" onPress={() => handleSavePrefs(prefs)}>
+                        <Button variant="secondary" onPress={() => handleSavePrefs(prefs, true)}>
                             Save breakdown details
                         </Button>
                     </Card>
@@ -234,24 +376,24 @@ export const Profile = ({ navigation }) => {
                     <Card style={styles.settingsCard}>
                         <View style={styles.settingItem}>
                             <View style={styles.settingLeft}>
-                                <Bell size={22} color={COLORS.brand} />
+                                <Bell size={22} color={colors.brand} />
                                 <Text style={styles.settingLabel}>SOS & help alerts</Text>
                             </View>
                             <Switch
                                 value={prefs.sosAlerts !== false}
                                 onValueChange={(v) => handleSavePrefs({ sosAlerts: v })}
-                                trackColor={{ true: COLORS.brand, false: '#444' }}
+                                trackColor={{ true: colors.brand, false: colors.border }}
                             />
                         </View>
                         <View style={styles.settingItem}>
                             <View style={styles.settingLeft}>
-                                <Bell size={22} color={COLORS.brand} />
+                                <Bell size={22} color={colors.brand} />
                                 <Text style={styles.settingLabel}>Mechanic status updates</Text>
                             </View>
                             <Switch
                                 value={prefs.mechanicUpdates !== false}
                                 onValueChange={(v) => handleSavePrefs({ mechanicUpdates: v })}
-                                trackColor={{ true: COLORS.brand, false: '#444' }}
+                                trackColor={{ true: colors.brand, false: colors.border }}
                             />
                         </View>
                     </Card>
@@ -263,10 +405,10 @@ export const Profile = ({ navigation }) => {
                             onPress={() => setShowPasswordForm(!showPasswordForm)}
                         >
                             <View style={styles.settingLeft}>
-                                <Lock size={22} color={COLORS.brand} />
+                                <Lock size={22} color={colors.brand} />
                                 <Text style={styles.settingLabel}>Change password</Text>
                             </View>
-                            <ChevronRight size={20} color="#444" />
+                            <ChevronRight size={20} color={colors.textMuted} />
                         </TouchableOpacity>
                         {showPasswordForm && (
                             <View style={styles.passwordBox}>
@@ -306,14 +448,14 @@ export const Profile = ({ navigation }) => {
                             }
                         >
                             <View style={styles.settingLeft}>
-                                <ShieldCheck size={22} color={COLORS.brand} />
+                                <ShieldCheck size={22} color={colors.brand} />
                                 <Text style={styles.settingLabel}>Security (2FA)</Text>
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={{ color: user?.is_2fa_enabled ? COLORS.brand : COLORS.textMuted, marginRight: 8, fontWeight: '700' }}>
+                                <Text style={{ color: user?.is_2fa_enabled ? colors.brand : colors.textMuted, marginRight: 8, fontWeight: '700' }}>
                                     {user?.is_2fa_enabled ? 'ON' : 'OFF'}
                                 </Text>
-                                <ChevronRight size={20} color="#444" />
+                                <ChevronRight size={20} color={colors.textMuted} />
                             </View>
                         </TouchableOpacity>
                     </Card>
@@ -322,7 +464,7 @@ export const Profile = ({ navigation }) => {
                     <Card style={styles.settingsCard}>
                         <View style={styles.settingItem}>
                             <View style={styles.settingLeft}>
-                                <Globe size={22} color={COLORS.brand} />
+                                <Globe size={22} color={colors.brand} />
                                 <Text style={styles.settingLabel}>{t('language')}</Text>
                             </View>
                             <View style={styles.langSelector}>
@@ -344,7 +486,7 @@ export const Profile = ({ navigation }) => {
                     <Text style={styles.sectionTitle}>Offline routes</Text>
                     <Card style={styles.offlineCard}>
                         <View style={styles.offlineHeader}>
-                            <Database size={22} color={COLORS.brand} />
+                            <Database size={22} color={colors.brand} />
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.settingLabel}>Saved routes</Text>
                                 <Text style={styles.offlineSub}>
@@ -365,7 +507,7 @@ export const Profile = ({ navigation }) => {
                                             style={styles.routeMain}
                                             onPress={() => navigation.navigate('Route', { routeId: route.id })}
                                         >
-                                            <Map size={18} color={COLORS.brand} />
+                                            <Map size={18} color={colors.brand} />
                                             <View style={styles.routeInfo}>
                                                 <Text style={styles.routeLabel} numberOfLines={1}>{route.label}</Text>
                                                 <Text style={styles.routeMeta}>
@@ -374,13 +516,13 @@ export const Profile = ({ navigation }) => {
                                                     {route.savedAt && ` · ${new Date(route.savedAt).toLocaleDateString()}`}
                                                 </Text>
                                             </View>
-                                            <ChevronRight size={18} color="#444" />
+                                            <ChevronRight size={18} color={colors.textMuted} />
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.routeDelete}
                                             onPress={() => handleDeleteRoute(route.id)}
                                         >
-                                            <Trash2 size={16} color={COLORS.danger} />
+                                            <Trash2 size={16} color={colors.danger} />
                                         </TouchableOpacity>
                                     </View>
                                 ))}
@@ -395,7 +537,7 @@ export const Profile = ({ navigation }) => {
                     </Card>
 
                     <Card style={styles.helpCard}>
-                        <HelpCircle size={22} color={COLORS.brand} />
+                        <HelpCircle size={22} color={colors.brand} />
                         <View style={{ flex: 1 }}>
                             <Text style={styles.helpTitle}>Breakdown safety</Text>
                             <Text style={styles.helpText}>
@@ -405,7 +547,7 @@ export const Profile = ({ navigation }) => {
                     </Card>
 
                     <TouchableOpacity style={styles.logoutRow} onPress={handleLogout}>
-                        <LogOut size={22} color={COLORS.danger} />
+                        <LogOut size={22} color={colors.danger} />
                         <Text style={styles.logoutText}>{t('logout')}</Text>
                     </TouchableOpacity>
 
@@ -419,128 +561,3 @@ export const Profile = ({ navigation }) => {
         </ScreenLayout>
     );
 };
-
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.bgDark },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: SPACING.xl,
-        paddingTop: 60,
-        gap: SPACING.md,
-    },
-    headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.textMain, flex: 1 },
-    fieldRow: {
-        flexDirection: 'row',
-        gap: SPACING.md,
-        width: '100%',
-    },
-    fieldHalf: {
-        flex: 1,
-        minWidth: 0,
-    },
-    scroll: { padding: SPACING.xl, paddingTop: 0, paddingBottom: SPACING.xxl },
-    userCard: { alignItems: 'center', marginBottom: SPACING.xl, marginTop: SPACING.md },
-    userName: { fontSize: 22, fontWeight: '700', color: COLORS.textMain, marginTop: SPACING.md },
-    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-    userEmail: { fontSize: 14, color: COLORS.textMuted },
-    roleBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginTop: SPACING.md,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: RADIUS.pill,
-        backgroundColor: 'rgba(255,255,255,0.08)',
-    },
-    roleText: { fontSize: 11, fontWeight: '800', color: COLORS.textMain, textTransform: 'uppercase' },
-    sectionTitle: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: COLORS.textMuted,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-        marginBottom: SPACING.sm,
-        marginTop: SPACING.md,
-    },
-    formCard: { padding: SPACING.xl, marginBottom: SPACING.md },
-    appearanceHint: {
-        fontSize: 12,
-        color: COLORS.textMuted,
-        lineHeight: 18,
-        marginBottom: SPACING.md,
-    },
-    offlineCard: { padding: SPACING.xl, marginBottom: SPACING.lg },
-    offlineHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-    offlineSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 4 },
-    routesList: { marginTop: SPACING.lg, gap: 8 },
-    routeItem: {
-        flexDirection: 'row',
-        backgroundColor: COLORS.inputBg,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.06)',
-        overflow: 'hidden',
-    },
-    routeMain: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        padding: SPACING.md,
-    },
-    routeInfo: { flex: 1, minWidth: 0 },
-    routeLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textMain },
-    routeMeta: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
-    routeDelete: {
-        width: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderLeftWidth: 1,
-        borderLeftColor: 'rgba(255,255,255,0.06)',
-    },
-    clearBtn: { marginTop: SPACING.md },
-    clearBtnText: { color: COLORS.danger, fontSize: 12, fontWeight: '700' },
-    settingsCard: { padding: 0, overflow: 'hidden', marginBottom: SPACING.md },
-    settingItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: SPACING.xl,
-        borderBottomWidth: 1,
-        borderBottomColor: '#222',
-    },
-    settingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-    settingLabel: { fontSize: 16, fontWeight: '600', color: COLORS.textMain },
-    langSelector: { flexDirection: 'row', gap: 8 },
-    langBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#444' },
-    langBtnActive: { borderColor: COLORS.brand, backgroundColor: 'rgba(255, 107, 53, 0.1)' },
-    langText: { fontSize: 10, color: '#888', fontWeight: '800' },
-    langTextActive: { color: COLORS.brand },
-    passwordBox: { padding: SPACING.xl, paddingTop: 0, borderBottomWidth: 1, borderBottomColor: '#222' },
-    helpCard: {
-        flexDirection: 'row',
-        gap: 12,
-        padding: SPACING.xl,
-        marginBottom: SPACING.lg,
-        alignItems: 'flex-start',
-    },
-    helpTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textMain },
-    helpText: { fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 18 },
-    logoutRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        padding: SPACING.xl,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.3)',
-        backgroundColor: 'rgba(239, 68, 68, 0.06)',
-    },
-    logoutText: { fontSize: 16, fontWeight: '700', color: COLORS.danger },
-    infoBox: { marginTop: 40, alignItems: 'center' },
-    infoTitle: { color: '#444', fontSize: 12, fontWeight: '700' },
-    infoText: { color: '#333', fontSize: 11, marginTop: 4 },
-});

@@ -15,6 +15,7 @@ export function Home() {
     const { showToast } = useToast();
     const [userLoc, setUserLoc] = useState(null);
     const [userName, setUserName] = useState('Driver');
+    const [userAvatar, setUserAvatar] = useState(null);
     const [locationLabel, setLocationLabel] = useState('Locating you...');
     const [locationError, setLocationError] = useState('');
     const [nearbyMechanics, setNearbyMechanics] = useState([]);
@@ -49,6 +50,7 @@ export function Home() {
         }
         const userData = JSON.parse(userStr);
         setUserName(userData.username || 'Driver');
+        setUserAvatar(userData.avatar_url || null);
         const socket = initSocket();
         loadLocationAndMechanics();
 
@@ -112,6 +114,7 @@ export function Home() {
                         )}
                         <ProfileAvatar
                             name={userName}
+                            avatarUrl={userAvatar}
                             size={42}
                             className="header"
                             onClick={() => navigate('/profile')}

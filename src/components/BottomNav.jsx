@@ -18,7 +18,7 @@ export function BottomNav() {
                     <span>Jobs</span>
                 </NavLink>
                 <NavLink to="/profile" className={({ isActive }) => `nav-item nav-profile ${isActive ? 'active' : ''}`}>
-                    <ProfileAvatar name={user.username} size={28} active={false} />
+                    <ProfileAvatar name={user.username} avatarUrl={user.avatar_url} size={28} active={false} />
                     <span>Profile</span>
                 </NavLink>
             </nav>
@@ -43,7 +43,7 @@ export function BottomNav() {
                 <span>Activity</span>
             </NavLink>
             <NavLink to="/profile" className={({ isActive }) => `nav-item nav-profile ${isActive ? 'active' : ''}`}>
-                <ProfileAvatar name={user.username} size={28} active={false} />
+                <ProfileAvatar name={user.username} avatarUrl={user.avatar_url} size={28} active={false} />
                 <span>Profile</span>
             </NavLink>
         </nav>

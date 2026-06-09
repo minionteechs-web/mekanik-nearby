@@ -4,40 +4,123 @@ const jwt = require('jsonwebtoken');
 const { authenticator } = require('otplib');
 const qrcode = require('qrcode');
 const db = require('../config/db');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
+
+const MECHANIC_SPECIALTIES = [
+    'General Repairs',
+    'Engine & Transmission',
+    'Electrical & Battery',
+    'Tires & Alignment',
+    'AC & Cooling',
+    'Bodywork & Welding',
+];
+
+const shapeUser = (row) => ({
+    id: row.id,
+    username: row.username,
+    email: row.email,
+    phone: row.phone,
+    role: row.role,
+    is_2fa_enabled: row.is_2fa_enabled,
+    avatar_url: row.avatar_url || null,
+});
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res) => {
-    const { username, email, password, phone, role } = req.body;
+    const {
+        username,
+        email,
+        password,
+        phone,
+        role,
+        workshopName,
+        specialty,
+        city,
+        state,
+        yearsExperience,
+        certification,
+    } = req.body;
     const userRole = ['driver', 'mechanic'].includes(role) ? role : 'driver';
 
+    if (!username?.trim() || !email?.trim() || !password) {
+        return res.status(400).json({ message: 'Name, email, and password are required' });
+    }
+    if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    if (userRole === 'driver') {
+        if (!phone?.trim()) {
+            return res.status(400).json({
+                message: 'Phone number is required so mechanics can reach you during roadside emergencies',
+            });
+        }
+    }
+
+    if (userRole === 'mechanic') {
+        if (!phone?.trim()) {
+            return res.status(400).json({ message: 'Business phone is required for driver callbacks' });
+        }
+        if (!workshopName?.trim() || !specialty?.trim() || !city?.trim()) {
+            return res.status(400).json({
+                message: 'Workshop name, specialty, and city are required to join as a mechanic',
+            });
+        }
+        if (!MECHANIC_SPECIALTIES.includes(specialty.trim())) {
+            return res.status(400).json({ message: 'Please select a valid specialty' });
+        }
+    }
+
     try {
-        // Check if user exists
-        const userExists = await db.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
+        const userExists = await db.query(
+            'SELECT * FROM users WHERE email = $1 OR username = $2',
+            [email.trim(), username.trim()]
+        );
         if (userExists.rows.length > 0) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Hash password
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        // Create user
         const newUser = await db.query(
-            'INSERT INTO users (username, email, password_hash, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, role',
-            [username, email, passwordHash, phone, userRole]
+            'INSERT INTO users (username, email, password_hash, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [username.trim(), email.trim(), passwordHash, phone?.trim() || null, userRole]
         );
 
         const user = newUser.rows[0];
+
+        if (userRole === 'mechanic') {
+            const certNote = certification?.trim()
+                ? `Cert: ${certification.trim()}${yearsExperience ? ` · ${yearsExperience}+ yrs` : ''}`
+                : yearsExperience
+                    ? `${yearsExperience}+ years experience`
+                    : null;
+
+            await db.query(
+                `INSERT INTO mechanics (user_id, name, specialty, city, state, address)
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                [
+                    user.id,
+                    workshopName.trim(),
+                    specialty.trim(),
+                    city.trim(),
+                    state?.trim() || null,
+                    certNote,
+                ]
+            );
+        }
 
         const token = jwt.sign({ id: user.id, role: user.role, username: user.username }, process.env.JWT_SECRET, {
             expiresIn: '30d',
         });
 
         res.status(201).json({
-            user,
+            user: shapeUser(user),
             token,
         });
     } catch (err) {
@@ -88,13 +171,7 @@ exports.login = async (req, res) => {
         });
 
         res.json({
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                is_2fa_enabled: user.is_2fa_enabled,
-            },
+            user: shapeUser(user),
             token,
         });
     } catch (err) {
@@ -164,13 +241,7 @@ exports.verify2FA = async (req, res) => {
         });
 
         res.json({
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                is_2fa_enabled: user.is_2fa_enabled,
-            },
+            user: shapeUser(user),
             token: finalToken,
         });
     } catch (err) {
@@ -224,14 +295,11 @@ exports.toggle2FA = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
     try {
-        const result = await db.query(
-            'SELECT id, username, email, phone, role, is_2fa_enabled, created_at FROM users WHERE id = $1',
-            [req.user.id]
-        );
+        const result = await db.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json({ user: result.rows[0] });
+        res.json({ user: shapeUser(result.rows[0]) });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });
@@ -266,11 +334,11 @@ exports.updateMe = async (req, res) => {
         }
 
         const updated = await db.query(
-            'UPDATE users SET username = $1, phone = $2 WHERE id = $3 RETURNING id, username, email, phone, role, is_2fa_enabled',
+            'UPDATE users SET username = $1, phone = $2 WHERE id = $3 RETURNING *',
             [nextUsername, nextPhone, req.user.id]
         );
 
-        res.json({ user: updated.rows[0] });
+        res.json({ user: shapeUser(updated.rows[0]) });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });
@@ -309,6 +377,42 @@ exports.changePassword = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Upload profile photo
+// @route   POST /api/auth/me/avatar
+// @access  Private
+exports.uploadAvatar = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: 'No image uploaded' });
+    }
+
+    try {
+        const current = await db.query('SELECT avatar_url FROM users WHERE id = $1', [req.user.id]);
+        if (current.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+        const updated = await db.query(
+            'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING *',
+            [avatarUrl, req.user.id]
+        );
+
+        const oldUrl = current.rows[0].avatar_url;
+        if (oldUrl?.startsWith('/uploads/avatars/')) {
+            const oldPath = path.join(__dirname, '../../', oldUrl.replace(/^\//, ''));
+            if (fs.existsSync(oldPath)) {
+                fs.unlinkSync(oldPath);
+            }
+        }
+
+        res.json({ user: shapeUser(updated.rows[0]), avatar_url: avatarUrl });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Could not save profile photo' });
     }
 };
 

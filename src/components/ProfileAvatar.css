@@ -30,6 +30,18 @@ button.profile-avatar-circle:hover {
     box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.35);
 }
 
+.profile-avatar-circle.has-photo {
+    overflow: hidden;
+    padding: 0;
+}
+
+.profile-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
 .profile-avatar-circle.large {
     width: 96px !important;
     height: 96px !important;

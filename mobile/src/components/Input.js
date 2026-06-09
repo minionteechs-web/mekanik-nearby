@@ -26,7 +26,7 @@ const createStyles = (colors) => ({
     },
 });
 
-export const Input = ({ label, style, ...props }) => {
+export const Input = ({ label, style, readOnly = false, ...props }) => {
     const styles = useThemedStyles(createStyles);
     const { colors } = useTheme();
 
@@ -35,7 +35,8 @@ export const Input = ({ label, style, ...props }) => {
             {label && <Text style={styles.label}>{label}</Text>}
             <TextInput
                 placeholderTextColor={colors.textSubtle}
-                style={styles.input}
+                style={[styles.input, readOnly && { opacity: 0.65 }]}
+                editable={!readOnly}
                 {...props}
             />
         </View>

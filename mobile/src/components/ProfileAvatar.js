@@ -1,9 +1,11 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View, Image } from 'react-native';
 import { getProfileInitials, getProfileColor } from '../utils/profileAvatar';
+import { getMediaUrl } from '../utils/api';
 
 export const ProfileAvatar = ({
     name,
+    avatarUrl,
     size = 40,
     onPress,
     active = false,
@@ -12,6 +14,7 @@ export const ProfileAvatar = ({
     const initials = getProfileInitials(name);
     const color = getProfileColor(name);
     const fontSize = Math.max(10, Math.round(size * 0.36));
+    const imageSrc = avatarUrl ? getMediaUrl(avatarUrl) : null;
 
     const content = (
         <View
@@ -21,13 +24,17 @@ export const ProfileAvatar = ({
                     width: size,
                     height: size,
                     borderRadius: size / 2,
-                    backgroundColor: color,
+                    backgroundColor: imageSrc ? 'transparent' : color,
                 },
                 active && styles.active,
                 style,
             ]}
         >
-            <Text style={[styles.text, { fontSize }]}>{initials}</Text>
+            {imageSrc ? (
+                <Image source={{ uri: imageSrc }} style={{ width: size, height: size, borderRadius: size / 2 }} />
+            ) : (
+                <Text style={[styles.text, { fontSize }]}>{initials}</Text>
+            )}
         </View>
     );
 
@@ -48,6 +55,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         borderColor: 'rgba(255,255,255,0.15)',
+        overflow: 'hidden',
     },
     active: {
         borderColor: '#FF6B35',

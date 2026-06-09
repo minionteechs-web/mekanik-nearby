@@ -259,6 +259,7 @@ export const Home = ({ navigation }) => {
                             )}
                             <ProfileAvatar
                                 name={user?.username || 'Driver'}
+                                avatarUrl={user?.avatar_url}
                                 size={40}
                                 onPress={() => navigation.navigate('Profile')}
                             />

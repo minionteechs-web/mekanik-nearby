@@ -78,7 +78,7 @@ export const BottomTabBar = ({ navigation, current, user }) => {
                             style={styles.tab}
                             onPress={() => navigation.navigate(tab.name)}
                         >
-                            <ProfileAvatar name={user?.username || 'User'} size={28} active={active} />
+                            <ProfileAvatar name={user?.username || 'User'} avatarUrl={user?.avatar_url} size={28} active={active} />
                             <Text style={[styles.label, active && styles.labelActive]}>{tab.label}</Text>
                         </TouchableOpacity>
                     );

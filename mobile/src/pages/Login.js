@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView, SafeAreaView } from 'react-native';
 import { SPACING } from '../constants/theme';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
@@ -180,7 +180,7 @@ export const Login = ({ navigation }) => {
                 <View style={styles.intro}>
                     <BrandLogo size={72} />
                     <Text style={styles.title}>Welcome Back</Text>
-                    <Text style={styles.subtitle}>Sign in to continue to Mekanik Nearby</Text>
+                    <Text style={styles.subtitle}>Login to find a mechanic nearby</Text>
                 </View>
                 <Input label="Email" placeholder="your@email.com" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
                 <Input label="Password" placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry />
@@ -201,13 +201,13 @@ export const Login = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.themeCorner}>
                 <ThemeToggle compact />
             </View>
             <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
                 {renderBody()}
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 };

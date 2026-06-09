@@ -11,8 +11,10 @@ const {
     getMe,
     updateMe,
     changePassword,
+    uploadAvatar,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const avatarUpload = require('../config/avatarMulter');
 
 router.post('/register', register);
 router.post('/login', login);
@@ -24,6 +26,7 @@ router.post('/reset-password', resetPassword);
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateMe);
 router.put('/change-password', protect, changePassword);
+router.post('/me/avatar', protect, avatarUpload.single('avatar'), uploadAvatar);
 router.post('/setup-2fa', protect, setup2FA);
 router.post('/toggle-2fa', protect, toggle2FA);
 

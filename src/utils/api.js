@@ -34,6 +34,10 @@ export const auth = {
     getMe: () => api.get('/auth/me'),
     updateMe: (data) => api.put('/auth/me', data),
     changePassword: (data) => api.put('/auth/change-password', data),
+    uploadAvatar: (formData) =>
+        api.post('/auth/me/avatar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }),
 };
 
 export const notifications = {

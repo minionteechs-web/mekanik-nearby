@@ -19,7 +19,7 @@ import {
     Save,
 } from 'lucide-react';
 import { Card } from '../components/Card';
-import { ProfileAvatar } from '../components/ProfileAvatar';
+import { ProfilePhotoPicker } from '../components/ProfilePhotoPicker';
 import { formatBytes } from '../utils/format';
 import { clearOfflineData } from '../utils/offline';
 import { auth, disconnectSocket } from '../utils/api';
@@ -154,7 +154,12 @@ export function Profile() {
             </header>
 
             <div className="profile-hero">
-                <ProfileAvatar name={displayName} size={96} className="large" />
+                <ProfilePhotoPicker
+                    name={displayName}
+                    avatarUrl={user.avatar_url}
+                    onUpdated={(next) => setUser(next)}
+                    size={96}
+                />
                 <h2 className="profile-name">{displayName}</h2>
                 <div className="profile-email">
                     <Mail size={14} /> {user.email || 'No email provided'}
