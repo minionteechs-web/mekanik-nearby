@@ -1,39 +1,43 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { COLORS, RADIUS, SPACING } from '../constants/theme';
+import { View, Text, TextInput } from 'react-native';
+import { RADIUS, SPACING } from '../constants/theme';
+import { useThemedStyles } from '../hooks/useThemedStyles';
+import { useTheme } from '../utils/themeContext';
 
-export const Input = ({ label, style, ...props }) => {
-    return (
-        <View style={[styles.container, style]}>
-            {label && <Text style={styles.label}>{label}</Text>}
-            <TextInput
-                placeholderTextColor="#666"
-                style={styles.input}
-                {...props}
-            />
-        </View>
-    );
-};
-
-const styles = StyleSheet.create({
+const createStyles = (colors) => ({
     container: {
         marginBottom: SPACING.lg,
         width: '100%',
     },
     label: {
         fontSize: 14,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
         marginBottom: SPACING.xs,
         fontWeight: '500',
     },
     input: {
-        backgroundColor: COLORS.inputBg,
-        borderRadius: RADIUS.md,
-        paddingVertical: SPACING.md,
-        paddingHorizontal: SPACING.lg,
-        color: COLORS.textMain,
-        fontSize: 16,
+        backgroundColor: colors.inputBg,
         borderWidth: 1,
-        borderColor: '#333',
+        borderColor: colors.border,
+        borderRadius: RADIUS.md,
+        padding: SPACING.lg,
+        color: colors.textMain,
+        fontSize: 16,
     },
 });
+
+export const Input = ({ label, style, ...props }) => {
+    const styles = useThemedStyles(createStyles);
+    const { colors } = useTheme();
+
+    return (
+        <View style={[styles.container, style]}>
+            {label && <Text style={styles.label}>{label}</Text>}
+            <TextInput
+                placeholderTextColor={colors.textSubtle}
+                style={styles.input}
+                {...props}
+            />
+        </View>
+    );
+};

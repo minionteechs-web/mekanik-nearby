@@ -6,6 +6,19 @@
     justify-content: center;
 }
 
+.auth-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.auth-brand-row .theme-toggle {
+    flex: 1;
+    max-width: 220px;
+}
+
 .auth-header {
     text-align: center;
     margin-bottom: 2.5rem;

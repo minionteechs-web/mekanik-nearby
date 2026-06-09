@@ -1,20 +1,7 @@
-export const COLORS = {
-    brand: '#FF6B35',
-    brandDark: '#E55A26',
-    brandGlow: 'rgba(255, 107, 53, 0.25)',
-    bgDark: '#0F0F0F',
-    bgCard: '#1A1A1A',
-    bgElevated: '#222222',
-    textMain: '#FFFFFF',
-    textMuted: '#9CA3AF',
-    textSubtle: '#6B7280',
-    success: '#10B981',
-    trust: '#3B82F6',
-    danger: '#EF4444',
-    emergency: '#DC2626',
-    border: '#2D2D2D',
-    inputBg: '#2A2A2A',
-};
+import { darkColors } from './themes';
+
+/** @deprecated Prefer useTheme().colors in components */
+export const COLORS = darkColors;
 
 export const SPACING = {
     xs: 4,

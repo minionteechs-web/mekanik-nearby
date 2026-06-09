@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, Alert, Image } from 'react-native';
 import { ShieldAlert, Compass, Wrench, ChevronUp, MapPin, Navigation } from 'lucide-react-native';
-import { COLORS, SPACING, RADIUS } from '../constants/theme';
+import { SPACING, RADIUS } from '../constants/theme';
 import { Card } from '../components/Card';
 import { LiveMap } from '../components/LiveMap';
 import { mechanics, initSocket } from '../utils/api';
@@ -9,12 +9,117 @@ import { t } from '../utils/i18n';
 import { getGreeting, formatDistance } from '../utils/format';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { ProfileAvatar } from '../components/ProfileAvatar';
+import { useTheme } from '../utils/themeContext';
+import { useThemedStyles } from '../hooks/useThemedStyles';
+
+const logoSource = require('../../assets/logo.png');
 import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
 import { openLocationSettings } from '../utils/geo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_REGION } from '../constants/mapStyles';
 
+const createStyles = (colors) => ({
+    container: { flex: 1, backgroundColor: colors.bgDark },
+    mapLayer: { flex: 1, position: 'relative' },
+    map: { flex: 1 },
+    mapOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        paddingHorizontal: SPACING.xl,
+        paddingTop: SPACING.md,
+        backgroundColor: 'transparent',
+    },
+    brandChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        alignSelf: 'flex-start',
+        marginBottom: 6,
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: RADIUS.pill,
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    brandPin: { width: 18, height: 18, resizeMode: 'contain' },
+    brandName: {
+        fontSize: 9,
+        fontWeight: '800',
+        color: colors.textMuted,
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+    },
+    greetingTitle: { fontSize: 22, fontWeight: '800', color: colors.textMain },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+    locationLine: { fontSize: 12, color: colors.textMuted, flex: 1 },
+    locationError: { color: colors.danger },
+    retryLink: { fontSize: 12, fontWeight: '700', color: colors.brand, marginTop: 4 },
+    liveUpdate: { fontSize: 12, fontWeight: '700', color: colors.success, marginTop: 4 },
+    nearbyChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: `${colors.brand}26`,
+        borderWidth: 1,
+        borderColor: `${colors.brand}4D`,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: RADIUS.pill,
+    },
+    nearbyChipText: { color: colors.brand, fontSize: 11, fontWeight: '700' },
+    headerActions: { alignItems: 'flex-end', gap: 8 },
+    sheet: {
+        backgroundColor: colors.bgCard,
+        borderTopLeftRadius: RADIUS.xl,
+        borderTopRightRadius: RADIUS.xl,
+        borderTopWidth: 1,
+        borderColor: colors.border,
+        maxHeight: '38%',
+    },
+    sheetExpanded: { maxHeight: '55%' },
+    sheetHandle: { alignItems: 'center', paddingVertical: SPACING.md },
+    grabber: { width: 40, height: 4, backgroundColor: colors.border, borderRadius: 2, marginBottom: 4 },
+    chevronUp: { transform: [{ rotate: '180deg' }] },
+    sheetContent: { paddingHorizontal: SPACING.xl, paddingBottom: SPACING.xl },
+    quickRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
+    quickPill: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        paddingVertical: 8,
+        borderRadius: RADIUS.pill,
+        backgroundColor: `${colors.brand}1A`,
+        borderWidth: 1,
+        borderColor: `${colors.brand}33`,
+    },
+    quickPillSecondary: { backgroundColor: colors.bgElevated, borderColor: colors.border },
+    sosPill: { backgroundColor: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.25)' },
+    quickPillText: { fontSize: 11, fontWeight: '700', color: colors.brand },
+    sheetTitle: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginBottom: SPACING.md },
+    mechRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.sm, padding: SPACING.md },
+    mechAvatar: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: colors.brand, justifyContent: 'center', alignItems: 'center',
+    },
+    mechInitial: { color: '#fff', fontWeight: '800', fontSize: 16 },
+    mechInfo: { flex: 1 },
+    mechName: { fontSize: 15, fontWeight: '700', color: colors.textMain },
+    mechSpec: { fontSize: 12, color: colors.textMuted },
+    mechDist: { fontSize: 12, fontWeight: '600', color: colors.brand },
+    empty: { textAlign: 'center', color: colors.textMuted, paddingVertical: SPACING.lg },
+});
+
 export const Home = ({ navigation }) => {
+    const styles = useThemedStyles(createStyles);
+    const { colors } = useTheme();
     const [user, setUser] = useState(null);
     const [nearbyMechanics, setNearbyMechanics] = useState([]);
     const [location, setLocation] = useState(null);
@@ -123,9 +228,13 @@ export const Home = ({ navigation }) => {
                     />
                     <SafeAreaView style={styles.mapOverlay}>
                         <View style={{ flex: 1 }}>
+                            <View style={styles.brandChip}>
+                                <Image source={logoSource} style={styles.brandPin} />
+                                <Text style={styles.brandName}>Mekanik Nearby</Text>
+                            </View>
                             <Text style={styles.greetingTitle}>{getGreeting(user?.username || 'Driver')}</Text>
                             <View style={styles.locationRow}>
-                                <Navigation size={12} color={locationError ? COLORS.danger : COLORS.brand} />
+                                <Navigation size={12} color={locationError ? colors.danger : colors.brand} />
                                 <Text style={[styles.locationLine, locationError && styles.locationError]}>
                                     {loading ? 'Finding your location...' : locationError || `You're in ${locationLabel}`}
                                 </Text>
@@ -144,7 +253,7 @@ export const Home = ({ navigation }) => {
                         <View style={styles.headerActions}>
                             {!loading && !locationError && nearbyMechanics.length > 0 && (
                                 <View style={styles.nearbyChip}>
-                                    <MapPin size={12} color={COLORS.brand} />
+                                    <MapPin size={12} color={colors.brand} />
                                     <Text style={styles.nearbyChipText}>{nearbyMechanics.length} nearby</Text>
                                 </View>
                             )}
@@ -160,22 +269,22 @@ export const Home = ({ navigation }) => {
                 <View style={[styles.sheet, sheetExpanded && styles.sheetExpanded]}>
                     <TouchableOpacity style={styles.sheetHandle} onPress={() => setSheetExpanded(!sheetExpanded)}>
                         <View style={styles.grabber} />
-                        <ChevronUp size={18} color={COLORS.textMuted} style={sheetExpanded && styles.chevronUp} />
+                        <ChevronUp size={18} color={colors.textMuted} style={sheetExpanded && styles.chevronUp} />
                     </TouchableOpacity>
 
                     <View style={styles.sheetContent}>
                         <View style={styles.quickRow}>
                             <TouchableOpacity style={styles.quickPill} onPress={() => navigation.navigate('Mechanics')}>
-                                <Wrench size={14} color={COLORS.brand} />
+                                <Wrench size={14} color={colors.brand} />
                                 <Text style={styles.quickPillText}>Browse all</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.quickPill, styles.quickPillSecondary]} onPress={() => navigation.navigate('Route')}>
-                                <Compass size={14} color={COLORS.textMuted} />
-                                <Text style={[styles.quickPillText, { color: COLORS.textMuted }]}>Offline</Text>
+                                <Compass size={14} color={colors.textMuted} />
+                                <Text style={[styles.quickPillText, { color: colors.textMuted }]}>Offline</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.quickPill, styles.sosPill]} onPress={() => navigation.navigate('SOS')}>
-                                <ShieldAlert size={14} color={COLORS.danger} />
-                                <Text style={[styles.quickPillText, { color: COLORS.danger }]}>SOS</Text>
+                                <ShieldAlert size={14} color={colors.danger} />
+                                <Text style={[styles.quickPillText, { color: colors.danger }]}>SOS</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -209,81 +318,3 @@ export const Home = ({ navigation }) => {
         </ScreenLayout>
     );
 };
-
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.bgDark },
-    mapLayer: { flex: 1, position: 'relative' },
-    map: { flex: 1 },
-    mapOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        paddingHorizontal: SPACING.xl,
-        paddingTop: SPACING.md,
-        backgroundColor: 'transparent',
-    },
-    greetingTitle: { fontSize: 22, fontWeight: '800', color: COLORS.textMain },
-    locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-    locationLine: { fontSize: 12, color: COLORS.textMuted, flex: 1 },
-    locationError: { color: COLORS.danger },
-    retryLink: { fontSize: 12, fontWeight: '700', color: COLORS.brand, marginTop: 4 },
-    liveUpdate: { fontSize: 12, fontWeight: '700', color: COLORS.success, marginTop: 4 },
-    nearbyChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: 'rgba(255, 107, 53, 0.15)',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 107, 53, 0.3)',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: RADIUS.pill,
-    },
-    nearbyChipText: { color: COLORS.brand, fontSize: 11, fontWeight: '700' },
-    headerActions: { alignItems: 'flex-end', gap: 8 },
-    sheet: {
-        backgroundColor: COLORS.bgCard,
-        borderTopLeftRadius: RADIUS.xl,
-        borderTopRightRadius: RADIUS.xl,
-        borderTopWidth: 1,
-        borderColor: COLORS.border,
-        maxHeight: '38%',
-    },
-    sheetExpanded: { maxHeight: '55%' },
-    sheetHandle: { alignItems: 'center', paddingVertical: SPACING.md },
-    grabber: { width: 40, height: 4, backgroundColor: COLORS.border, borderRadius: 2, marginBottom: 4 },
-    chevronUp: { transform: [{ rotate: '180deg' }] },
-    sheetContent: { paddingHorizontal: SPACING.xl, paddingBottom: SPACING.xl },
-    quickRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
-    quickPill: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 4,
-        paddingVertical: 8,
-        borderRadius: RADIUS.pill,
-        backgroundColor: 'rgba(255, 107, 53, 0.1)',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 107, 53, 0.2)',
-    },
-    quickPillSecondary: { backgroundColor: COLORS.bgElevated, borderColor: COLORS.border },
-    sosPill: { backgroundColor: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.25)' },
-    quickPillText: { fontSize: 11, fontWeight: '700', color: COLORS.brand },
-    sheetTitle: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted, marginBottom: SPACING.md },
-    mechRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.sm, padding: SPACING.md },
-    mechAvatar: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: COLORS.brand, justifyContent: 'center', alignItems: 'center',
-    },
-    mechInitial: { color: '#fff', fontWeight: '800', fontSize: 16 },
-    mechInfo: { flex: 1 },
-    mechName: { fontSize: 15, fontWeight: '700', color: COLORS.textMain },
-    mechSpec: { fontSize: 12, color: COLORS.textMuted },
-    mechDist: { fontSize: 12, fontWeight: '600', color: COLORS.brand },
-    empty: { textAlign: 'center', color: COLORS.textMuted, paddingVertical: SPACING.lg },
-});

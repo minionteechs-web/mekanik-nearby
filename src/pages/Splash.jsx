@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { initSocket } from '../utils/api';
-import { Car, Settings, Wrench } from 'lucide-react';
+import { BrandLogo } from '../components/BrandLogo';
 import './Splash.css';
 
 export function Splash() {
@@ -20,27 +20,18 @@ export function Splash() {
             } else {
                 navigate('/login');
             }
-        }, 2800);
+        }, 2600);
 
         return () => clearTimeout(timer);
     }, [navigate]);
 
     return (
         <div className="splash-screen">
-            <div className="splash-animation-container">
-                <div className="splash-car-wrapper">
-                    <Car size={64} className="icon-car" />
-                </div>
-                <div className="splash-tools-wrapper">
-                    <Settings size={32} className="icon-gear" />
-                    <Wrench size={32} className="icon-wrench" />
-                </div>
+            <div className="splash-logo-wrap glow">
+                <BrandLogo size={128} />
             </div>
-            <div className="splash-content">
-                <h1 className="splash-logo">Mekanik NG</h1>
-                <p className="splash-tagline">Because every journey deserves a happy ending.</p>
-            </div>
-            <div className="splash-loader"></div>
+            <p className="splash-tagline">Because every journey deserves a happy ending.</p>
+            <div className="splash-loader" />
         </div>
     );
 }

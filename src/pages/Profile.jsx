@@ -26,6 +26,8 @@ import { auth, disconnectSocket } from '../utils/api';
 import { listSavedRoutes, deleteSavedRoute, clearAllRoutes } from '../utils/routeStorage';
 import { getProfilePrefs, saveProfilePrefs, updateStoredUser } from '../utils/profilePrefs';
 import { useToast } from '../components/Toast';
+import { ThemeToggle } from '../components/ThemeToggle';
+import { BrandLogo } from '../components/BrandLogo';
 import './MechanicList.css';
 import './Profile.css';
 
@@ -264,6 +266,12 @@ export function Profile() {
                     </button>
                 </Card>
 
+                <h3 className="profile-section-label">Appearance</h3>
+                <Card className="profile-settings-card">
+                    <p className="profile-appearance-hint">Match your device, or choose light or dark for roadside visibility day or night.</p>
+                    <ThemeToggle />
+                </Card>
+
                 <h3 className="profile-section-label">Notifications</h3>
                 <Card className="profile-settings-card profile-toggles">
                     <label className="profile-toggle">
@@ -415,7 +423,10 @@ export function Profile() {
                     </div>
                 </Card>
 
-                <p className="profile-version">Mekanik Nearby v1.0 · Built for Nigerian highways</p>
+                <div className="profile-brand-footer">
+                    <BrandLogo size={48} showWordmark={false} />
+                    <p className="profile-version">Mekanik Nearby v1.0 · Built for Nigerian highways</p>
+                </div>
 
                 <Card className="profile-menu-item profile-signout" onClick={handleLogout}>
                     <LogOut size={24} color="var(--color-danger)" />

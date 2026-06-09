@@ -37,6 +37,33 @@
     min-width: 0;
 }
 
+.home-brand-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+    padding: 0.2rem 0.55rem 0.2rem 0.3rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+    pointer-events: auto;
+}
+
+.home-brand-pin {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.home-brand-name {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
 .home-header-actions {
     display: flex;
     flex-direction: column;

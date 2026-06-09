@@ -1,0 +1,59 @@
+.brand-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.brand-logo-mark {
+    width: var(--logo-size, 72px);
+    height: var(--logo-size, 72px);
+    object-fit: contain;
+    filter: drop-shadow(0 8px 20px rgba(229, 57, 53, 0.35));
+}
+
+.brand-logo-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.brand-logo-title {
+    font-family: var(--font-heading);
+    font-size: calc(var(--logo-size, 72px) * 0.34);
+    font-weight: 800;
+    color: var(--color-text-main);
+    letter-spacing: -0.02em;
+}
+
+.brand-logo-sub {
+    font-size: calc(var(--logo-size, 72px) * 0.18);
+    font-weight: 700;
+    color: var(--color-brand);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+}
+
+.brand-logo.compact {
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.brand-logo.compact .brand-logo-text {
+    align-items: flex-start;
+}
+
+.brand-logo.watermark .brand-logo-mark {
+    opacity: 0.92;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+}
+
+.brand-logo.glow .brand-logo-mark {
+    animation: logoPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+}

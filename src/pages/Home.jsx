@@ -84,6 +84,10 @@ export function Home() {
                 />
                 <div className="map-overlay-header">
                     <div className="home-header-main">
+                        <div className="home-brand-chip">
+                            <img src="/logo.png" alt="" className="home-brand-pin" aria-hidden />
+                            <span className="home-brand-name">Mekanik Nearby</span>
+                        </div>
                         <h2 className="home-greeting-text">{getGreeting(userName)}</h2>
                         <p className="home-location-line">
                             <Navigation size={13} />

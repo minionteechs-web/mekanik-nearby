@@ -1,10 +1,53 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Home, Search, ShieldAlert, ClipboardList, Wrench } from 'lucide-react-native';
-import { COLORS, SPACING, SHADOW } from '../constants/theme';
+import { SPACING, SHADOW } from '../constants/theme';
 import { ProfileAvatar } from './ProfileAvatar';
+import { useThemedStyles } from '../hooks/useThemedStyles';
+import { useTheme } from '../utils/themeContext';
+
+const createStyles = (colors) => ({
+    bar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        backgroundColor: colors.overlay,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        paddingBottom: SPACING.lg,
+        paddingTop: SPACING.sm,
+    },
+    tab: {
+        alignItems: 'center',
+        gap: 2,
+        minWidth: 52,
+        paddingVertical: SPACING.xs,
+    },
+    label: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: colors.textMuted,
+    },
+    labelActive: {
+        color: colors.brand,
+    },
+    fab: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: colors.emergency,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: -20,
+        borderWidth: 4,
+        borderColor: 'rgba(239, 68, 68, 0.25)',
+        ...SHADOW.fab,
+    },
+});
 
 export const BottomTabBar = ({ navigation, current, user }) => {
+    const styles = useThemedStyles(createStyles);
+    const { colors } = useTheme();
     const isMechanic = user?.role === 'mechanic';
 
     const driverTabs = [
@@ -35,11 +78,7 @@ export const BottomTabBar = ({ navigation, current, user }) => {
                             style={styles.tab}
                             onPress={() => navigation.navigate(tab.name)}
                         >
-                            <ProfileAvatar
-                                name={user?.username || 'User'}
-                                size={28}
-                                active={active}
-                            />
+                            <ProfileAvatar name={user?.username || 'User'} size={28} active={active} />
                             <Text style={[styles.label, active && styles.labelActive]}>{tab.label}</Text>
                         </TouchableOpacity>
                     );
@@ -64,7 +103,7 @@ export const BottomTabBar = ({ navigation, current, user }) => {
                         style={styles.tab}
                         onPress={() => navigation.navigate(tab.name)}
                     >
-                        <Icon size={22} color={active ? COLORS.brand : COLORS.textMuted} />
+                        <Icon size={22} color={active ? colors.brand : colors.textMuted} />
                         <Text style={[styles.label, active && styles.labelActive]}>{tab.label}</Text>
                     </TouchableOpacity>
                 );
@@ -72,42 +111,3 @@ export const BottomTabBar = ({ navigation, current, user }) => {
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    bar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-around',
-        backgroundColor: 'rgba(18, 18, 18, 0.97)',
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-        paddingBottom: SPACING.lg,
-        paddingTop: SPACING.sm,
-    },
-    tab: {
-        alignItems: 'center',
-        gap: 2,
-        minWidth: 52,
-        paddingVertical: SPACING.xs,
-    },
-    label: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: COLORS.textMuted,
-    },
-    labelActive: {
-        color: COLORS.brand,
-    },
-    fab: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: COLORS.emergency,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: -20,
-        borderWidth: 4,
-        borderColor: 'rgba(239, 68, 68, 0.25)',
-        ...SHADOW.fab,
-    },
-});

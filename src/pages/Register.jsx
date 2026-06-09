@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Card } from '../components/Card';
 import { auth } from '../utils/api';
+import { BrandLogo } from '../components/BrandLogo';
 import './Auth.css';
 
 export function Register() {
@@ -54,6 +55,9 @@ export function Register() {
 
     return (
         <div className="auth-container">
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                <BrandLogo size={64} />
+            </div>
             <div className="auth-header">
                 <h1 className="auth-title">Create Account</h1>
                 <p className="auth-subtitle">Join Mekanik Nearby today</p>

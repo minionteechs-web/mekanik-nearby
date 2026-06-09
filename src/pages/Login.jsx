@@ -5,6 +5,8 @@ import { Input } from '../components/Input';
 import { Card } from '../components/Card';
 import { auth, initSocket } from '../utils/api';
 import { refreshUserLocation } from '../utils/location';
+import { BrandLogo } from '../components/BrandLogo';
+import { ThemeToggle } from '../components/ThemeToggle';
 import './Auth.css';
 
 export function Login() {
@@ -155,6 +157,10 @@ export function Login() {
 
     return (
         <div className="auth-container">
+            <div className="auth-brand-row">
+                <BrandLogo size={64} />
+                <ThemeToggle />
+            </div>
             <div className="auth-header">
                 <h1 className="auth-title">Welcome Back</h1>
                 <p className="auth-subtitle">Login to find a mechanic nearby</p>

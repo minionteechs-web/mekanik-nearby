@@ -1,0 +1,36 @@
+.theme-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+    padding: 0.35rem;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.theme-toggle-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.65rem 0.35rem;
+    border: none;
+    border-radius: calc(var(--radius-md) - 4px);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background var(--motion-fast), color var(--motion-fast), box-shadow var(--motion-fast);
+}
+
+.theme-toggle-btn.active {
+    background: var(--color-bg-card);
+    color: var(--color-brand);
+    box-shadow: var(--shadow-card);
+}
+
+.theme-toggle-btn:hover:not(.active) {
+    color: var(--color-text-main);
+}

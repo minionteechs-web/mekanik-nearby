@@ -37,9 +37,13 @@ import { listSavedRoutes, deleteSavedRoute, clearAllRoutes, clearOfflineData } f
 import { formatBytes } from '../utils/format';
 import { getProfilePrefs, saveProfilePrefs } from '../utils/profilePrefs';
 import { ScreenLayout } from '../components/ScreenLayout';
+import { ThemeToggle } from '../components/ThemeToggle';
+import { BrandLogo } from '../components/BrandLogo';
+import { useTheme } from '../utils/themeContext';
 
 export const Profile = ({ navigation }) => {
     const { user, logout, updateUser } = useAuth();
+    const { colors } = useTheme();
     const [lang, setLang] = useState(getCurrentLang());
     const [savedRoutes, setSavedRoutes] = useState([]);
     const [loadingRoutes, setLoadingRoutes] = useState(true);
@@ -137,7 +141,7 @@ export const Profile = ({ navigation }) => {
 
     return (
         <ScreenLayout navigation={navigation} currentRoute="Profile">
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.bgDark }]}>
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>{t('profile')}</Text>
                 </View>
@@ -215,6 +219,14 @@ export const Profile = ({ navigation }) => {
                         <Button variant="secondary" onPress={() => handleSavePrefs(prefs)}>
                             Save breakdown details
                         </Button>
+                    </Card>
+
+                    <Text style={styles.sectionTitle}>Appearance</Text>
+                    <Card style={styles.formCard}>
+                        <Text style={styles.appearanceHint}>
+                            Auto follows your phone. Light or dark helps on bright highways or night breakdowns.
+                        </Text>
+                        <ThemeToggle />
                     </Card>
 
                     <Text style={styles.sectionTitle}>Notifications</Text>
@@ -397,6 +409,7 @@ export const Profile = ({ navigation }) => {
                     </TouchableOpacity>
 
                     <View style={styles.infoBox}>
+                        <BrandLogo size={44} showWordmark={false} />
                         <Text style={styles.infoTitle}>Mekanik Nearby v1.0-mobile</Text>
                         <Text style={styles.infoText}>Supporting Nigerian drivers from Lagos to Kano.</Text>
                     </View>
@@ -436,6 +449,12 @@ const styles = StyleSheet.create({
         marginTop: SPACING.md,
     },
     formCard: { padding: SPACING.xl, marginBottom: SPACING.md },
+    appearanceHint: {
+        fontSize: 12,
+        color: COLORS.textMuted,
+        lineHeight: 18,
+        marginBottom: SPACING.md,
+    },
     offlineCard: { padding: SPACING.xl, marginBottom: SPACING.lg },
     offlineHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
     offlineSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 4 },

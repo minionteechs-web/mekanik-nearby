@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React from 'react';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
-// Screens
 import { Splash } from './src/pages/Splash';
 import { Login } from './src/pages/Login';
 import { Register } from './src/pages/Register';
@@ -20,42 +19,61 @@ import { MechanicOnboard } from './src/pages/MechanicOnboard';
 import { Activity } from './src/pages/Activity';
 
 import { AuthProvider } from './src/utils/authContext';
+import { ThemeProvider, useTheme } from './src/utils/themeContext';
 
 const Stack = createNativeStackNavigator();
 
+function AppNavigation() {
+    const { colors, isDark } = useTheme();
+
+    const navTheme = {
+        ...(isDark ? DarkTheme : DefaultTheme),
+        colors: {
+            ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+            background: colors.bgDark,
+            card: colors.bgCard,
+            text: colors.textMain,
+            border: colors.border,
+            primary: colors.brand,
+        },
+    };
+
+    return (
+        <NavigationContainer theme={navTheme}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <Stack.Navigator
+                initialRouteName="Splash"
+                screenOptions={{
+                    headerShown: false,
+                    animation: 'fade',
+                    contentStyle: { backgroundColor: colors.bgDark },
+                }}
+            >
+                <Stack.Screen name="Splash" component={Splash} />
+                <Stack.Screen name="Login" component={Login} />
+                <Stack.Screen name="Register" component={Register} />
+                <Stack.Screen name="Home" component={Home} />
+                <Stack.Screen name="Mechanics" component={MechanicList} />
+                <Stack.Screen name="MechanicDetail" component={MechanicDetail} />
+                <Stack.Screen name="SOS" component={SOS} />
+                <Stack.Screen name="Route" component={RoutePlanner} />
+                <Stack.Screen name="Activity" component={Activity} />
+                <Stack.Screen name="Profile" component={Profile} />
+                <Stack.Screen name="MechanicHome" component={MechanicDashboard} />
+                <Stack.Screen name="MechanicOnboard" component={MechanicOnboard} />
+                <Stack.Screen name="Chat" component={Chat} />
+                <Stack.Screen name="TwoFactorSetup" component={TwoFactorSetup} />
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
+}
+
 export default function App() {
-  useEffect(() => {
-    console.log("[App] Component Mounted");
-  }, []);
-  
-  return (
-    <AuthProvider>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <Stack.Navigator
-          initialRouteName="Splash"
-          screenOptions={{
-            headerShown: false,
-            animation: 'fade',
-            contentStyle: { backgroundColor: '#121212' }
-          }}
-        >
-          <Stack.Screen name="Splash" component={Splash} />
-          <Stack.Screen name="Login" component={Login} />
-          <Stack.Screen name="Register" component={Register} />
-          <Stack.Screen name="Home" component={Home} />
-          <Stack.Screen name="Mechanics" component={MechanicList} />
-          <Stack.Screen name="MechanicDetail" component={MechanicDetail} />
-          <Stack.Screen name="SOS" component={SOS} />
-          <Stack.Screen name="Route" component={RoutePlanner} />
-          <Stack.Screen name="Activity" component={Activity} />
-          <Stack.Screen name="Profile" component={Profile} />
-          <Stack.Screen name="MechanicHome" component={MechanicDashboard} />
-          <Stack.Screen name="MechanicOnboard" component={MechanicOnboard} />
-          <Stack.Screen name="Chat" component={Chat} />
-          <Stack.Screen name="TwoFactorSetup" component={TwoFactorSetup} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </AuthProvider>
-  );
+    return (
+        <ThemeProvider>
+            <AuthProvider>
+                <AppNavigation />
+            </AuthProvider>
+        </ThemeProvider>
+    );
 }
