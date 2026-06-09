@@ -43,6 +43,20 @@
     margin: 0.15rem 0 0;
 }
 
+.home-location-line {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin: 0.25rem 0 0;
+}
+
+.home-location-line strong {
+    color: var(--color-brand);
+    font-weight: 600;
+}
+
 .nearby-chip {
     display: inline-flex;
     align-items: center;

@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, MapPin, ChevronUp } from 'lucide-react';
+import { Wrench, MapPin, ChevronUp, Navigation } from 'lucide-react';
 import { MapComponent } from '../components/MapComponent';
 import { MechanicCard } from '../components/MechanicCard';
 import { mechanics as mechanicsApi } from '../utils/api';
 import { getGreeting } from '../utils/format';
+import { resolveUserLocation, cacheUserLocation } from '../utils/location';
 import './Home.css';
 
 export function Home() {
     const navigate = useNavigate();
     const [userLoc, setUserLoc] = useState([6.5244, 3.3792]);
     const [userName, setUserName] = useState('Driver');
+    const [locationLabel, setLocationLabel] = useState('Locating you...');
+    const [locationSource, setLocationSource] = useState('gps');
     const [nearbyMechanics, setNearbyMechanics] = useState([]);
     const [sheetExpanded, setSheetExpanded] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -24,32 +27,27 @@ export function Home() {
         const userData = JSON.parse(userStr);
         setUserName(userData.username || 'Driver');
 
-        const fetchNearby = async (lat, lng) => {
+        const init = async () => {
             try {
                 setLoading(true);
-                const response = await mechanicsApi.getNearby(lat, lng, 30);
+                const location = await resolveUserLocation();
+                setUserLoc([location.lat, location.lng]);
+                setLocationLabel(location.label);
+                setLocationSource(location.source);
+                cacheUserLocation(location);
+
+                const response = await mechanicsApi.getNearby(location.lat, location.lng, 30);
                 setNearbyMechanics(response.data);
             } catch (err) {
                 console.error('Error fetching dashboard mechanics:', err);
+                setLocationLabel('Lagos, Nigeria (default)');
+                setLocationSource('default');
             } finally {
                 setLoading(false);
             }
         };
 
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    setUserLoc([lat, lng]);
-                    fetchNearby(lat, lng);
-                },
-                () => fetchNearby(6.5244, 3.3792),
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        } else {
-            fetchNearby(6.5244, 3.3792);
-        }
+        init();
     }, [navigate]);
 
     const previewMechanics = sheetExpanded ? nearbyMechanics : nearbyMechanics.slice(0, 2);
@@ -67,7 +65,15 @@ export function Home() {
                 <div className="map-overlay-header">
                     <div>
                         <h2 className="home-greeting-text">{getGreeting(userName)}</h2>
-                        <p className="home-subtext">Roadside help, one tap away</p>
+                        <p className="home-location-line">
+                            <Navigation size={13} />
+                            {loading ? 'Finding your location...' : (
+                                <>
+                                    You&apos;re in <strong>{locationLabel}</strong>
+                                    {locationSource === 'default' && ' — enable GPS for accuracy'}
+                                </>
+                            )}
+                        </p>
                     </div>
                     {!loading && (
                         <div className="nearby-chip">

@@ -1,12 +1,25 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-const useSsl = process.env.DATABASE_URL || process.env.DB_SSL === 'true';
+const isCloudDb = Boolean(process.env.DATABASE_URL);
 
-const poolConfig = process.env.DATABASE_URL
+// Strip sslmode from URL — pg v8 treats require as verify-full which can cause ECONNRESET on some networks
+const getConnectionString = () => {
+    if (!process.env.DATABASE_URL) return null;
+    const url = new URL(process.env.DATABASE_URL);
+    url.searchParams.delete('sslmode');
+    if (!url.searchParams.has('uselibpqcompat')) {
+        url.searchParams.set('uselibpqcompat', 'true');
+    }
+    return url.toString();
+};
+
+const poolConfig = isCloudDb
     ? {
-        connectionString: process.env.DATABASE_URL,
-        ssl: useSsl ? { rejectUnauthorized: false } : false,
+        connectionString: getConnectionString(),
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 60000,
+        max: 5,
     }
     : {
         user: process.env.DB_USER,
@@ -14,7 +27,7 @@ const poolConfig = process.env.DATABASE_URL
         database: process.env.DB_NAME,
         password: process.env.DB_PASSWORD,
         port: process.env.DB_PORT,
-        ssl: useSsl ? { rejectUnauthorized: false } : false,
+        ssl: false,
     };
 
 const pool = new Pool(poolConfig);

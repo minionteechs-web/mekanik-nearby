@@ -1,64 +1,29 @@
 const db = require('../config/db');
-
-const checkPostGIS = async () => {
-    try {
-        await db.query('SELECT postgis_version()');
-        return true;
-    } catch (e) {
-        return false;
-    }
-};
+const {
+    canUsePostGISLocation,
+    haversineNearbyQuery,
+    postgisNearbyQuery,
+} = require('../utils/geoQuery');
 
 // @desc    Get mechanics near a location
 // @route   GET /api/mechanics/nearby
 // @access  Public
 exports.getNearbyMechanics = async (req, res) => {
     const { lat, lng, radius = 50000 } = req.query;
-    const isPostGIS = await checkPostGIS();
 
     if (!lat || !lng) {
         return res.status(400).json({ message: 'Please provide valid latitude and longitude' });
     }
 
     try {
-        let query;
-        let params;
-
-        if (isPostGIS) {
-            query = `
-                SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city,
-                       ST_X(location::geometry) as lng, ST_Y(location::geometry) as lat,
-                       ST_Distance(location, ST_SetSRID(ST_Point($1, $2), 4326)::geography) as distance_meters
-                FROM mechanics
-                WHERE is_available = TRUE
-                  AND ST_DWithin(location, ST_SetSRID(ST_Point($1, $2), 4326)::geography, $3)
-                ORDER BY distance_meters ASC
-            `;
-            params = [lng, lat, radius];
-        } else {
-            query = `
-                SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city, lat, lng, distance_meters
-                FROM (
-                    SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city, lat, lng,
-                           (6371000 * acos(
-                               LEAST(1, GREATEST(-1,
-                                   cos(radians($1)) * cos(radians(lat)) * cos(radians(lng) - radians($2)) +
-                                   sin(radians($1)) * sin(radians(lat))
-                               ))
-                           )) AS distance_meters
-                    FROM mechanics
-                    WHERE lat IS NOT NULL AND lng IS NOT NULL AND is_available = TRUE
-                ) nearby
-                WHERE distance_meters < $3
-                ORDER BY distance_meters ASC
-            `;
-            params = [lat, lng, radius];
-        }
+        const usePostGIS = await canUsePostGISLocation();
+        const query = usePostGIS ? postgisNearbyQuery : haversineNearbyQuery;
+        const params = usePostGIS ? [lng, lat, radius] : [lat, lng, radius];
 
         const result = await db.query(query, params);
         res.json(result.rows);
     } catch (err) {
-        console.error(err);
+        console.error('getNearbyMechanics error:', err);
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -69,7 +34,7 @@ exports.getNearbyMechanics = async (req, res) => {
 exports.onboardMechanic = async (req, res) => {
     const { name, specialty, address, city, state, lat, lng } = req.body;
     const userId = req.user.id;
-    const isPostGIS = await checkPostGIS();
+    const usePostGIS = await canUsePostGISLocation();
 
     if (!name || lat == null || lng == null) {
         return res.status(400).json({ message: 'Name, latitude, and longitude are required' });
@@ -79,7 +44,7 @@ exports.onboardMechanic = async (req, res) => {
         let query;
         let params;
 
-        if (isPostGIS) {
+        if (usePostGIS) {
             query = `
                 INSERT INTO mechanics (user_id, name, specialty, address, city, state, lat, lng, location)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ST_SetSRID(ST_Point($9, $10), 4326)::geography)

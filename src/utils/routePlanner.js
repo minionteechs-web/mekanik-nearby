@@ -22,17 +22,28 @@ export async function downloadRouteMechanics(startName, endName) {
 
     const mid = midpoint(start, end);
 
-    const [startMechs, midMechs, endMechs] = await Promise.all([
-        mechanicsApi.getNearby(start.lat, start.lng, ROUTE_RADIUS_KM),
-        mechanicsApi.getNearby(mid.lat, mid.lng, ROUTE_RADIUS_KM),
-        mechanicsApi.getNearby(end.lat, end.lng, ROUTE_RADIUS_KM),
-    ]);
+    const points = [
+        { label: 'start', lat: start.lat, lng: start.lng },
+        { label: 'mid', lat: mid.lat, lng: mid.lng },
+        { label: 'end', lat: end.lat, lng: end.lng },
+    ];
 
-    const mechanics = dedupeMechanics([
-        startMechs.data,
-        midMechs.data,
-        endMechs.data,
-    ]);
+    const results = await Promise.allSettled(
+        points.map((p) => mechanicsApi.getNearby(p.lat, p.lng, ROUTE_RADIUS_KM))
+    );
+
+    const failed = results.filter((r) => r.status === 'rejected');
+    if (failed.length === results.length) {
+        const first = failed[0].reason;
+        const msg = first?.response?.data?.message || first?.message || 'Could not reach server';
+        throw new Error(msg);
+    }
+
+    const mechanics = dedupeMechanics(
+        results
+            .filter((r) => r.status === 'fulfilled')
+            .map((r) => r.value.data)
+    );
 
     const payload = {
         route: {

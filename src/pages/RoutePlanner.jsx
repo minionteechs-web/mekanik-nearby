@@ -1,21 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, Map as MapIcon } from 'lucide-react';
+import { ChevronLeft, Download, Map as MapIcon, Navigation } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Card } from '../components/Card';
 import { useToast } from '../components/Toast';
 import { downloadRouteMechanics } from '../utils/routePlanner';
+import { resolveUserLocation, getCachedUserLocation } from '../utils/location';
 import './MechanicList.css';
 
 export function RoutePlanner() {
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const [start, setStart] = useState('Lagos');
+    const [start, setStart] = useState('');
     const [end, setEnd] = useState('');
+    const [userLocation, setUserLocation] = useState(null);
     const [downloading, setDownloading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        const cached = getCachedUserLocation();
+        if (cached?.label) {
+            const city = cached.label.split(',')[0].trim();
+            setStart(city);
+            setUserLocation(cached);
+            return;
+        }
+
+        resolveUserLocation().then((loc) => {
+            setUserLocation(loc);
+            const city = loc.label.split(',')[0].trim();
+            setStart(city);
+        });
+    }, []);
 
     const handleDownload = async () => {
         if (!start.trim() || !end.trim()) {
@@ -31,7 +49,8 @@ export function RoutePlanner() {
             showToast(`Saved ${payload.count} mechanics for offline use`, 'success');
         } catch (err) {
             console.error(err);
-            setError(err.message || 'Download failed. Check your connection and try again.');
+            const msg = err.response?.data?.message || err.message || 'Download failed. Check your connection and try again.';
+            setError(msg);
         } finally {
             setDownloading(false);
         }
@@ -46,9 +65,18 @@ export function RoutePlanner() {
                 <h2>Route Planner</h2>
             </header>
 
+            {userLocation && (
+                <div className="location-banner">
+                    <Navigation size={16} />
+                    <span>
+                        Your location: <strong>{userLocation.label}</strong>
+                    </span>
+                </div>
+            )}
+
             <Card style={{ marginBottom: '1.5rem' }}>
                 <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                    Enter your route to download mechanic contacts along the way. Works offline after download — use major city names (Lagos, Ibadan, Abuja).
+                    Download mechanic contacts along your route for offline use. Start is pre-filled from your current location — use city names like Lagos, Enugu, Abuja.
                 </p>
                 <Input
                     label="Starting Point"
@@ -58,7 +86,7 @@ export function RoutePlanner() {
                 />
                 <Input
                     label="Destination"
-                    placeholder="e.g. Ibadan"
+                    placeholder="e.g. Enugu"
                     value={end}
                     onChange={(e) => setEnd(e.target.value)}
                 />
@@ -71,7 +99,7 @@ export function RoutePlanner() {
                     className="w-100"
                     style={{ width: '100%', marginTop: '1rem' }}
                     onClick={handleDownload}
-                    disabled={downloading || !end.trim()}
+                    disabled={downloading || !start.trim() || !end.trim()}
                 >
                     {downloading ? 'Downloading mechanics...' : (
                         <><Download size={18} style={{ marginRight: '8px' }} /> Download Route Data</>
