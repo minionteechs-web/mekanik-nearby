@@ -1,0 +1,118 @@
+.route-planner-page {
+    padding-bottom: 2rem;
+}
+
+.route-form-card {
+    margin-bottom: 1rem;
+}
+
+.route-form-hint {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    margin: 0 0 1.25rem;
+    line-height: 1.5;
+}
+
+.route-action-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.route-action-row button {
+    flex: 1;
+}
+
+.route-error {
+    color: var(--color-danger);
+    font-size: 0.85rem;
+    margin: 0.75rem 0 0;
+}
+
+.route-map-card {
+    padding: 1rem !important;
+}
+
+.route-map-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.route-map-title {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--color-text-main);
+}
+
+.route-saved-badge {
+    display: inline-block;
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-pill);
+    letter-spacing: 0.03em;
+}
+
+.route-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.route-stats span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.route-preview-hint,
+.route-result-footer p {
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    line-height: 1.45;
+}
+
+.route-result-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.route-map-actions {
+    margin-top: 0.75rem;
+}
+
+.google-maps-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(66, 133, 244, 0.4);
+    background: rgba(66, 133, 244, 0.1);
+    color: #60A5FA;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.google-maps-btn:hover {
+    background: rgba(66, 133, 244, 0.18);
+}
+
+@media (max-width: 480px) {
+    .route-action-row {
+        flex-direction: column;
+    }
+}

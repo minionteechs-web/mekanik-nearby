@@ -11,3 +11,17 @@ export const openDirections = (fromLat, fromLng, toLat, toLng) => {
 };
 
 export const getGoogleMapsUrl = (lat, lng) => `https://maps.google.com/?q=${lat},${lng}`;
+
+export const openRouteInGoogleMaps = (start, end) => {
+    if (!start?.lat || !end?.lat) return;
+    window.open(
+        `https://www.google.com/maps/dir/?api=1&origin=${start.lat},${start.lng}&destination=${end.lat},${end.lng}&travelmode=driving`,
+        '_blank',
+        'noopener,noreferrer'
+    );
+};
+
+export const openRestStopInGoogleMaps = (stop) => {
+    if (!stop?.lat) return;
+    openGoogleMaps(stop.lat, stop.lng, stop.label);
+};

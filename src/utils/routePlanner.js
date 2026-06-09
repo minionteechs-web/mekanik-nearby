@@ -1,14 +1,14 @@
 import { mechanics as mechanicsApi } from './api';
 import { geocodePlace, midpoint } from './geocode';
-import { saveOfflineData } from './offline';
+import { fetchRouteGeometry } from './routeGeometry';
+import { enrichRouteInsights } from './routeInsights';
+import { saveRoute } from './routeStorage';
 
 const ROUTE_RADIUS_KM = 80;
 
 const dedupeMechanics = (lists) => {
     const map = new Map();
-    lists.flat().forEach((m) => {
-        if (m?.id) map.set(m.id, m);
-    });
+    lists.flat().forEach((m) => { if (m?.id) map.set(m.id, m); });
     return Array.from(map.values());
 };
 
@@ -21,11 +21,12 @@ export async function downloadRouteMechanics(startName, endName) {
     }
 
     const mid = midpoint(start, end);
+    const geometry = await fetchRouteGeometry(start, end);
 
     const points = [
-        { label: 'start', lat: start.lat, lng: start.lng },
-        { label: 'mid', lat: mid.lat, lng: mid.lng },
-        { label: 'end', lat: end.lat, lng: end.lng },
+        { lat: start.lat, lng: start.lng },
+        { lat: mid.lat, lng: mid.lng },
+        { lat: end.lat, lng: end.lng },
     ];
 
     const results = await Promise.allSettled(
@@ -35,34 +36,33 @@ export async function downloadRouteMechanics(startName, endName) {
     const failed = results.filter((r) => r.status === 'rejected');
     if (failed.length === results.length) {
         const first = failed[0].reason;
-        const msg = first?.response?.data?.message || first?.message || 'Could not reach server';
-        throw new Error(msg);
+        throw new Error(first?.response?.data?.message || first?.message || 'Could not reach server');
     }
 
     const mechanics = dedupeMechanics(
-        results
-            .filter((r) => r.status === 'fulfilled')
-            .map((r) => r.value.data)
+        results.filter((r) => r.status === 'fulfilled').map((r) => r.value.data)
     );
 
+    const route = {
+        start: { name: startName, ...start },
+        end: { name: endName, ...end },
+        midpoint: mid,
+        path: geometry.path,
+        distanceKm: geometry.distanceKm,
+        durationMin: geometry.durationMin,
+        routeSource: geometry.source,
+        steps: geometry.steps,
+        downloadedAt: new Date().toISOString(),
+    };
+
+    const insights = await enrichRouteInsights({ ...route, start: route.start, end: route.end });
+
     const payload = {
-        route: {
-            start: { name: startName, ...start },
-            end: { name: endName, ...end },
-            midpoint: mid,
-            downloadedAt: new Date().toISOString(),
-        },
+        route: { ...route, ...insights },
         mechanics,
         count: mechanics.length,
     };
 
-    await saveOfflineData('mechanics_route', payload);
-    localStorage.setItem('mekanik_offline_meta', JSON.stringify({
-        routeLabel: `${start.label || startName} → ${end.label || endName}`,
-        count: mechanics.length,
-        downloadedAt: payload.route.downloadedAt,
-        sizeBytes: new Blob([JSON.stringify(payload)]).size,
-    }));
-
-    return payload;
+    const saved = await saveRoute(payload);
+    return saved;
 }

@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, User, Database, LogOut, Mail, Shield } from 'lucide-react';
+import { ChevronLeft, User, Database, LogOut, Mail, Shield, Map, Trash2, ChevronRight, Clock } from 'lucide-react';
 import { Card } from '../components/Card';
 import { formatBytes } from '../utils/format';
 import { clearOfflineData } from '../utils/offline';
+import { listSavedRoutes, deleteSavedRoute, clearAllRoutes } from '../utils/routeStorage';
 import './MechanicList.css';
+import './Profile.css';
 
 export function Profile() {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
-    const [offlineMeta, setOfflineMeta] = useState(null);
+    const [savedRoutes, setSavedRoutes] = useState([]);
+    const [loadingRoutes, setLoadingRoutes] = useState(true);
+
+    const refreshRoutes = async () => {
+        setLoadingRoutes(true);
+        const routes = await listSavedRoutes();
+        setSavedRoutes(routes);
+        setLoadingRoutes(false);
+    };
 
     useEffect(() => {
         const userData = localStorage.getItem('mekanik_user');
@@ -18,9 +28,7 @@ export function Profile() {
         } else {
             navigate('/login');
         }
-
-        const meta = localStorage.getItem('mekanik_offline_meta');
-        if (meta) setOfflineMeta(JSON.parse(meta));
+        refreshRoutes();
     }, [navigate]);
 
     const handleLogout = () => {
@@ -28,11 +36,22 @@ export function Profile() {
         navigate('/');
     };
 
-    const handleClearOffline = async () => {
-        await clearOfflineData();
-        localStorage.removeItem('mekanik_offline_meta');
-        setOfflineMeta(null);
+    const handleDeleteRoute = async (id) => {
+        const updated = await deleteSavedRoute(id);
+        setSavedRoutes(updated);
     };
+
+    const handleClearAll = async () => {
+        await clearAllRoutes();
+        await clearOfflineData();
+        setSavedRoutes([]);
+    };
+
+    const totalMechanics = savedRoutes.reduce((sum, r) => sum + (r.count || 0), 0);
+    const totalBytes = savedRoutes.reduce(
+        (sum, r) => sum + new Blob([JSON.stringify(r)]).size,
+        0
+    );
 
     if (!user) return null;
 
@@ -45,55 +64,84 @@ export function Profile() {
                 <h2>My Profile</h2>
             </header>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1.5rem', backgroundColor: 'rgba(255, 107, 53, 0.05)', borderRadius: '0 0 24px 24px', marginBottom: '1.5rem' }}>
-                <div style={{ width: 90, height: 90, borderRadius: '50%', backgroundColor: 'var(--color-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', boxShadow: '0 8px 16px rgba(255, 107, 53, 0.2)' }}>
+            <div className="profile-hero">
+                <div className="profile-avatar">
                     <User size={45} color="white" />
                 </div>
-                <h2 style={{ margin: '0 0 0.25rem 0', fontSize: '1.5rem' }}>{user.username || user.identifier}</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                <h2 className="profile-name">{user.username || user.identifier}</h2>
+                <div className="profile-email">
                     <Mail size={14} /> {user.email || 'No email provided'}
                 </div>
-                <div style={{ marginTop: '0.75rem', padding: '4px 12px', borderRadius: '20px', backgroundColor: 'rgba(255, 255, 255, 0.1)', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="profile-role">
                     <Shield size={12} color="var(--color-brand)" /> {user.role || 'Driver'}
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0 1.5rem 2rem 1.5rem' }}>
-                <Card className="profile-menu-item" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="profile-content">
+                <Card className="profile-menu-item profile-offline-card">
                     <Database size={24} color="var(--color-brand)" />
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ fontSize: '1rem', margin: 0 }}>Offline Data</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>
-                            {offlineMeta
-                                ? `${offlineMeta.routeLabel} — ${offlineMeta.count} mechanics (${formatBytes(offlineMeta.sizeBytes)})`
-                                : 'No offline routes saved'}
+                    <div className="profile-offline-body">
+                        <h3>Offline Routes</h3>
+                        <p className="profile-offline-summary">
+                            {loadingRoutes
+                                ? 'Loading saved routes...'
+                                : savedRoutes.length
+                                    ? `${savedRoutes.length} route${savedRoutes.length > 1 ? 's' : ''} · ${totalMechanics} mechanics · ${formatBytes(totalBytes)}`
+                                    : 'No offline routes saved'}
                         </p>
-                        {offlineMeta && (
-                            <button
-                                onClick={handleClearOffline}
-                                style={{ marginTop: '0.5rem', background: 'none', border: 'none', color: 'var(--color-danger)', fontSize: '0.8rem', cursor: 'pointer', padding: 0 }}
-                            >
-                                Clear offline data
+
+                        {!loadingRoutes && savedRoutes.length > 0 && (
+                            <ul className="saved-routes-list">
+                                {savedRoutes.map((route) => (
+                                    <li key={route.id} className="saved-route-item">
+                                        <button
+                                            type="button"
+                                            className="saved-route-main"
+                                            onClick={() => navigate(`/route-planner?routeId=${route.id}`)}
+                                        >
+                                            <Map size={18} className="saved-route-icon" />
+                                            <div className="saved-route-info">
+                                                <span className="saved-route-label">{route.label}</span>
+                                                <span className="saved-route-meta">
+                                                    {route.count} mechanics
+                                                    {route.route?.distanceKm != null && ` · ${route.route.distanceKm} km`}
+                                                    {route.savedAt && (
+                                                        <>
+                                                            {' · '}
+                                                            <Clock size={11} style={{ display: 'inline', verticalAlign: '-1px' }} />
+                                                            {' '}
+                                                            {new Date(route.savedAt).toLocaleDateString()}
+                                                        </>
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <ChevronRight size={18} className="saved-route-chevron" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="saved-route-delete"
+                                            onClick={() => handleDeleteRoute(route.id)}
+                                            aria-label={`Delete ${route.label}`}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        {savedRoutes.length > 0 && (
+                            <button type="button" className="profile-clear-btn" onClick={handleClearAll}>
+                                Clear all offline data
                             </button>
                         )}
                     </div>
                 </Card>
 
-                <Card
-                    className="profile-menu-item"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        cursor: 'pointer',
-                        border: '1px solid rgba(255, 68, 68, 0.3)',
-                        marginTop: '1rem',
-                    }}
-                    onClick={handleLogout}
-                >
+                <Card className="profile-menu-item profile-signout" onClick={handleLogout}>
                     <LogOut size={24} color="var(--color-danger)" />
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ fontSize: '1rem', margin: 0, color: 'var(--color-danger)', fontWeight: '700' }}>Sign Out</h3>
+                    <div>
+                        <h3>Sign Out</h3>
                     </div>
                 </Card>
             </div>
