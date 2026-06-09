@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { COLORS, RADIUS } from '../constants/theme';
-import { DARK_MAP_STYLE, DEFAULT_REGION } from '../constants/mapStyles';
+import { DEFAULT_REGION } from '../constants/mapStyles';
 
 let MapView, Marker, Circle, PROVIDER_GOOGLE;
 if (Platform.OS !== 'web') {
@@ -51,11 +51,12 @@ export function LiveMap({
             provider={PROVIDER_GOOGLE}
             style={[styles.map, style]}
             initialRegion={mapRegion}
-            customMapStyle={DARK_MAP_STYLE}
             showsUserLocation
             showsMyLocationButton
             showsCompass
-            showsTraffic={false}
+            showsTraffic
+            showsBuildings
+            showsIndoors={false}
             mapType="standard"
         >
             {userLocation && (

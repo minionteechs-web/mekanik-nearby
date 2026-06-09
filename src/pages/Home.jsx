@@ -57,7 +57,8 @@ export function Home() {
             <div className="home-map-layer">
                 <MapComponent
                     center={userLoc}
-                    zoom={14}
+                    zoom={16}
+                    mapStyle="live"
                     markers={nearbyMechanics}
                     fitToMarkers={nearbyMechanics.length > 0}
                     onMarkerClick={(mech) => navigate(`/mechanic/${mech.id}`)}

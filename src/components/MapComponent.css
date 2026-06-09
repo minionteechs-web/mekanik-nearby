@@ -49,15 +49,11 @@
 
 /* Mechanic pin */
 .map-mechanic-marker {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
-}
-
-.map-mechanic-marker .map-mechanic-label,
-.map-mechanic-marker svg {
-    display: none;
 }
 
 .map-mechanic-marker::before {
@@ -71,6 +67,7 @@
 
 .map-mechanic-marker.online::before {
     background: linear-gradient(135deg, #FF6B35, #E55A26);
+    box-shadow: 0 0 14px rgba(255, 107, 53, 0.5);
 }
 
 .map-mechanic-marker.offline::before {
@@ -82,20 +79,54 @@
     position: absolute;
     top: 6px;
     font-size: 14px;
+}
+
+.map-mechanic-name {
+    margin-top: 4px;
+    padding: 2px 8px;
+    background: rgba(15, 15, 15, 0.88);
+    border: 1px solid rgba(255, 107, 53, 0.45);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
     transform: rotate(0deg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 /* Live tracking mechanic */
 .map-tracking-mechanic {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+
+.map-tracking-car {
     font-size: 22px;
-    text-align: center;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+    line-height: 1;
+}
+
+.map-tracking-label {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--color-brand, #FF6B35);
+    background: rgba(0, 0, 0, 0.75);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
 }
 
 .map-tracking-pulse {
     position: absolute;
-    inset: -8px;
+    top: 0;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin-left: -20px;
     border-radius: 50%;
     border: 2px solid var(--color-brand, #FF6B35);
     animation: map-pulse 1.5s ease-out infinite;
@@ -140,13 +171,57 @@
     transform: scale(1.05);
 }
 
+.map-live-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 3.25rem;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #10B981;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-pill, 9999px);
+    pointer-events: none;
+    backdrop-filter: blur(6px);
+}
+
+.map-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10B981;
+    box-shadow: 0 0 8px #10B981;
+    animation: map-live-blink 1.4s ease-in-out infinite;
+}
+
+.map-zoom-hint {
+    position: absolute;
+    bottom: 3.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(0, 0, 0, 0.55);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-pill, 9999px);
+    pointer-events: none;
+    animation: map-hint-fade 3s ease-in-out infinite;
+}
+
 .map-attribution-badge {
     position: absolute;
     bottom: 0.5rem;
     left: 0.5rem;
     z-index: 1000;
     font-size: 0.6rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.55);
     background: rgba(0, 0, 0, 0.45);
     padding: 0.2rem 0.5rem;
     border-radius: var(--radius-pill, 9999px);
@@ -158,19 +233,38 @@
     100% { transform: scale(1.8); opacity: 0; }
 }
 
-/* Leaflet controls — dark theme native */
+@keyframes map-live-blink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes map-hint-fade {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
 .leaflet-control-zoom {
     border: none !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    margin-top: 0.75rem !important;
+    margin-right: 0.75rem !important;
 }
 
 .leaflet-control-zoom a {
-    background: #222 !important;
+    background: rgba(20, 20, 20, 0.9) !important;
     color: #fff !important;
-    border-color: #333 !important;
+    border-color: #444 !important;
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
 }
 
 .leaflet-popup-content-wrapper {
     border-radius: 12px !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Sharper road labels from tile layer */
+.leaflet-tile-pane {
+    filter: contrast(1.05) saturate(1.1);
 }

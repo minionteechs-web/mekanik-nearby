@@ -235,7 +235,8 @@ export function SOS() {
                     <div className="sos-found-map">
                         <MapComponent
                             center={mapCenter}
-                            zoom={14}
+                            zoom={16}
+                            mapStyle="live"
                             markers={[nearest]}
                             fitToMarkers
                         />
@@ -264,7 +265,8 @@ export function SOS() {
                         </button>
                         <MapComponent
                             center={mapCenter}
-                            zoom={15}
+                            zoom={17}
+                            mapStyle="live"
                             markers={nearest ? [nearest] : []}
                             trackingMechanic={mechanicPosition}
                             fitToMarkers

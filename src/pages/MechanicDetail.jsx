@@ -137,7 +137,8 @@ export function MechanicDetail() {
                     <div style={{ height: '180px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                         <MapComponent
                             center={[mech.lat, mech.lng]}
-                            zoom={15}
+                            zoom={17}
+                            mapStyle="live"
                             markers={[mech]}
                         />
                     </div>

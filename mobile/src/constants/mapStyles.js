@@ -23,6 +23,6 @@ export const DARK_MAP_STYLE = [
 export const DEFAULT_REGION = {
     latitude: 6.5244,
     longitude: 3.3792,
-    latitudeDelta: 0.12,
-    longitudeDelta: 0.12,
+    latitudeDelta: 0.045,
+    longitudeDelta: 0.045,
 };

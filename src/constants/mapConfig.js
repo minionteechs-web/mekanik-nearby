@@ -1,9 +1,32 @@
-// Real street-map tiles (OpenStreetMap data via CARTO CDN — no API key required)
+// OpenStreetMap-based tiles — no API key required
 export const MAP_TILES = {
+    // Dark roads + bright street/junction labels (best for live feel)
+    live: {
+        base: {
+            url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+            attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
+        },
+        labels: {
+            url: 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+            subdomains: 'abcd',
+            maxZoom: 20,
+        },
+    },
+    // Single-layer fallback — full colour with road names
+    voyager: {
+        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20,
+    },
     dark: {
         url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
         attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 20,
     },
@@ -15,5 +38,6 @@ export const MAP_TILES = {
     },
 };
 
-export const DEFAULT_CENTER = [6.5244, 3.3792]; // Lagos
-export const DEFAULT_ZOOM = 13;
+export const DEFAULT_CENTER = [6.5244, 3.3792];
+export const DEFAULT_ZOOM = 16;
+export const MIN_LABEL_ZOOM = 15;
