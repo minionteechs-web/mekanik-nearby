@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Mekanik Nearby",
+    "slug": "mekanik-nearby",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F0F0F"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dominion.mekaniknearby",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Mekanik Nearby uses your location to find mechanics near you and share your position during SOS emergencies.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Mekanik Nearby uses your location to track help requests and show mechanics your position when you need roadside assistance."
+      }
+    },
+    "android": {
+      "package": "com.dominion.mekaniknearby",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      },
+      "adaptiveIcon": {
+        "backgroundColor": "#0F0F0F",
+        "foregroundImage": "./assets/icon.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Mekanik Nearby to use your location for finding mechanics and emergency SOS."
+        }
+      ]
+    ]
+  }
+}
