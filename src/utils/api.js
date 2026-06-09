@@ -53,6 +53,7 @@ export const requests = {
     create: (data) => api.post('/requests', data),
     getUserRequests: () => api.get('/requests/my-requests'),
     accept: (id) => api.put(`/requests/${id}/accept`),
+    cancel: (id) => api.put(`/requests/${id}/cancel`),
     updateStatus: (id, status) => api.put(`/requests/${id}/status`, { status }),
 };
 
@@ -71,18 +72,42 @@ export const reviews = {
 };
 
 let socket;
-export const initSocket = () => {
-    if (socket) return socket;
 
+export const initSocket = () => {
     const user = JSON.parse(localStorage.getItem('mekanik_user') || '{}');
     if (!user.token) return null;
 
+    if (socket?.connected) return socket;
+
+    if (socket) {
+        socket.disconnect();
+        socket = null;
+    }
+
     socket = io(SOCKET_URL, {
         auth: { token: user.token },
+        autoConnect: true,
     });
 
-    socket.emit('join', user.id);
+    const joinRoom = () => {
+        if (user.id) socket.emit('join', user.id);
+    };
+
+    if (socket.connected) {
+        joinRoom();
+    } else {
+        socket.on('connect', joinRoom);
+    }
+
     return socket;
+};
+
+export const disconnectSocket = () => {
+    if (socket) {
+        socket.removeAllListeners();
+        socket.disconnect();
+        socket = null;
+    }
 };
 
 export const getSocket = () => socket;

@@ -4,6 +4,7 @@ import { ChevronLeft, User, Database, LogOut, Mail, Shield, Map, Trash2, Chevron
 import { Card } from '../components/Card';
 import { formatBytes } from '../utils/format';
 import { clearOfflineData } from '../utils/offline';
+import { disconnectSocket } from '../utils/api';
 import { listSavedRoutes, deleteSavedRoute, clearAllRoutes } from '../utils/routeStorage';
 import './MechanicList.css';
 import './Profile.css';
@@ -32,6 +33,7 @@ export function Profile() {
     }, [navigate]);
 
     const handleLogout = () => {
+        disconnectSocket();
         localStorage.removeItem('mekanik_user');
         navigate('/');
     };

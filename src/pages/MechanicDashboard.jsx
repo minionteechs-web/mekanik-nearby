@@ -80,7 +80,7 @@ export function MechanicDashboard() {
 
     useEffect(() => {
         let locationInterval;
-        if (activeRequest && ['en-route', 'arrived'].includes(activeRequest.status)) {
+        if (activeRequest && ['accepted', 'en-route', 'arrived'].includes(activeRequest.status)) {
             locationInterval = setInterval(() => {
                 if ('geolocation' in navigator) {
                     navigator.geolocation.getCurrentPosition((pos) => {

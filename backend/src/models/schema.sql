@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
     id SERIAL PRIMARY KEY,
     driver_id INTEGER REFERENCES users(id),
     mechanic_id INTEGER REFERENCES users(id),
-    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'accepted', 'en-route', 'completed', 'cancelled'
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'accepted', 'en-route', 'arrived', 'completed', 'cancelled'
     driver_lat REAL,
     driver_lng REAL,
     requested_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -76,7 +76,19 @@ CREATE TABLE IF NOT EXISTS reviews (
 );
 
 -- Indexes for performance
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT,
+    data JSONB DEFAULT '{}',
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 
 -- Messages Table for Chat & Media
 CREATE TABLE IF NOT EXISTS messages (

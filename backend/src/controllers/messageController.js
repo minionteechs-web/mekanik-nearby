@@ -13,7 +13,7 @@ const assertRequestParticipant = async (requestId, userId) => {
     }
 
     const request = requestResult.rows[0];
-    if (request.driver_id !== userId && request.mechanic_id !== userId) {
+    if (Number(request.driver_id) !== Number(userId) && Number(request.mechanic_id) !== Number(userId)) {
         return { error: { status: 403, message: 'Not authorized for this request' } };
     }
 

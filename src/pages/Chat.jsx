@@ -283,7 +283,11 @@ export function Chat() {
                     onChange={(e) => {
                         setNewMessage(e.target.value);
                         const socket = getSocket();
-                        if (socket) socket.emit('typing', { receiverId, request_id: requestId, senderId: user.id });
+                        if (socket) socket.emit('typing', {
+                            receiverId: parseInt(receiverId, 10),
+                            request_id: parseInt(requestId, 10),
+                            senderId: user.id,
+                        });
                     }}
                 />
                 <button type="submit" className="send-btn" disabled={!newMessage.trim() || isSending}>

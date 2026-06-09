@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { initSocket } from '../utils/api';
 import { Car, Settings, Wrench } from 'lucide-react';
 import './Splash.css';
 
@@ -8,6 +9,10 @@ export function Splash() {
 
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('mekanik_user') || 'null');
+
+        if (user?.token) {
+            initSocket();
+        }
 
         const timer = setTimeout(() => {
             if (user?.token) {

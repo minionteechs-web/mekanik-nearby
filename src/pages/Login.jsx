@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Card } from '../components/Card';
-import { auth } from '../utils/api';
+import { auth, initSocket } from '../utils/api';
 import { refreshUserLocation } from '../utils/location';
 import './Auth.css';
 
@@ -44,6 +44,7 @@ export function Login() {
 
             const { token, user } = response.data;
             localStorage.setItem('mekanik_user', JSON.stringify({ ...user, token }));
+            initSocket();
             refreshUserLocation().catch(() => {});
             navigatePostLogin(user);
         } catch (err) {
@@ -67,6 +68,7 @@ export function Login() {
             const response = await auth.verify2FA({ token: preAuthToken, code: twoFACode });
             const { token, user } = response.data;
             localStorage.setItem('mekanik_user', JSON.stringify({ ...user, token }));
+            initSocket();
             refreshUserLocation().catch(() => {});
             navigatePostLogin(user);
         } catch (err) {

@@ -5,6 +5,7 @@ import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { requests } from '../utils/api';
 import { getStatusLabel } from '../utils/format';
+import { ACTIVE_REQUEST_STATUSES } from '../utils/requestHelpers';
 
 export const Activity = ({ navigation }) => {
     const [items, setItems] = useState([]);
@@ -48,7 +49,11 @@ export const Activity = ({ navigation }) => {
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 style={styles.card}
-                                onPress={() => navigation.navigate('SOS', { trackId: item.id })}
+                                onPress={() => {
+                                    if (ACTIVE_REQUEST_STATUSES.includes(item.status)) {
+                                        navigation.navigate('SOS', { trackId: item.id });
+                                    }
+                                }}
                             >
                                 <View style={styles.cardTop}>
                                     <Text style={[styles.badge, { color: statusColor(item.status) }]}>
@@ -61,6 +66,9 @@ export const Activity = ({ navigation }) => {
                                 <Text style={styles.cardTitle}>
                                     {item.mechanic_name ? `Help from ${item.mechanic_name}` : `Request #${item.id}`}
                                 </Text>
+                                {ACTIVE_REQUEST_STATUSES.includes(item.status) && (
+                                    <Text style={styles.trackHint}>Tap to track live</Text>
+                                )}
                             </TouchableOpacity>
                         )}
                     />
@@ -88,6 +96,7 @@ const styles = StyleSheet.create({
     badge: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
     date: { fontSize: 12, color: COLORS.textSubtle },
     cardTitle: { fontSize: 16, fontWeight: '600', color: COLORS.textMain },
+    trackHint: { fontSize: 12, color: COLORS.brand, marginTop: 6, fontWeight: '600' },
     emptyBox: { alignItems: 'center', padding: SPACING.xxl, gap: SPACING.sm },
     emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textMain },
     empty: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center' },

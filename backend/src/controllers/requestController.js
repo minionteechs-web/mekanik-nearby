@@ -3,6 +3,17 @@ const { notifyUser } = require('../utils/socketLogic');
 const { createNotification } = require('./notificationController');
 
 const VALID_STATUSES = ['pending', 'accepted', 'en-route', 'arrived', 'completed', 'cancelled'];
+const ACTIVE_DRIVER_STATUSES = ['pending', 'accepted', 'en-route', 'arrived'];
+const ACTIVE_MECHANIC_STATUSES = ['accepted', 'en-route', 'arrived'];
+
+const ALLOWED_TRANSITIONS = {
+    pending: ['accepted', 'cancelled'],
+    accepted: ['en-route', 'cancelled'],
+    'en-route': ['arrived', 'cancelled'],
+    arrived: ['completed', 'cancelled'],
+    completed: [],
+    cancelled: [],
+};
 
 // @desc    Create a new service request (SOS)
 // @route   POST /api/requests
@@ -16,6 +27,18 @@ exports.createRequest = async (req, res) => {
     }
 
     try {
+        const openRequest = await db.query(
+            `SELECT id FROM service_requests
+             WHERE driver_id = $1 AND status = ANY($2::varchar[])`,
+            [driver_id, ACTIVE_DRIVER_STATUSES]
+        );
+        if (openRequest.rows.length > 0) {
+            return res.status(409).json({
+                message: 'You already have an active help request',
+                requestId: openRequest.rows[0].id,
+            });
+        }
+
         const mechanicCheck = await db.query(
             `SELECT u.id FROM users u
              JOIN mechanics m ON m.user_id = u.id
@@ -88,6 +111,15 @@ exports.acceptRequest = async (req, res) => {
     const mechanic_id = req.user.id;
 
     try {
+        const activeJob = await db.query(
+            `SELECT id FROM service_requests
+             WHERE mechanic_id = $1 AND status = ANY($2::varchar[])`,
+            [mechanic_id, ACTIVE_MECHANIC_STATUSES]
+        );
+        if (activeJob.rows.length > 0) {
+            return res.status(409).json({ message: 'Finish your current job before accepting another' });
+        }
+
         const query = `
             UPDATE service_requests
             SET status = 'accepted'
@@ -111,7 +143,44 @@ exports.acceptRequest = async (req, res) => {
     }
 };
 
-// @desc    Update request status (en-route, completed)
+// @desc    Cancel a service request (driver)
+// @route   PUT /api/requests/:id/cancel
+// @access  Private (Driver)
+exports.cancelRequest = async (req, res) => {
+    const requestId = req.params.id;
+    const driver_id = req.user.id;
+
+    try {
+        const result = await db.query(
+            `UPDATE service_requests
+             SET status = 'cancelled', resolved_at = CURRENT_TIMESTAMP
+             WHERE id = $1 AND driver_id = $2 AND status IN ('pending', 'accepted')
+             RETURNING *`,
+            [requestId, driver_id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Request not found or cannot be cancelled' });
+        }
+
+        const request = result.rows[0];
+        notifyUser(request.mechanic_id, 'status_updated', request);
+        await createNotification(
+            request.mechanic_id,
+            'request_cancelled',
+            'Request cancelled',
+            'The driver cancelled the help request.',
+            { requestId: request.id }
+        );
+
+        res.json(request);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Update request status (en-route, arrived, completed)
 // @route   PUT /api/requests/:id/status
 // @access  Private (Mechanic)
 exports.updateStatus = async (req, res) => {
@@ -124,18 +193,31 @@ exports.updateStatus = async (req, res) => {
     }
 
     try {
+        const current = await db.query(
+            'SELECT status FROM service_requests WHERE id = $1 AND mechanic_id = $2',
+            [requestId, mechanic_id]
+        );
+
+        if (current.rows.length === 0) {
+            return res.status(404).json({ message: 'Request not found' });
+        }
+
+        const currentStatus = current.rows[0].status;
+        const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
+        if (!allowed.includes(status)) {
+            return res.status(400).json({
+                message: `Cannot change status from "${currentStatus}" to "${status}"`,
+            });
+        }
+
         const query = `
             UPDATE service_requests
             SET status = $1, resolved_at = $2
             WHERE id = $3 AND mechanic_id = $4
             RETURNING *
         `;
-        const resolvedAt = status === 'completed' ? new Date() : null;
+        const resolvedAt = ['completed', 'cancelled'].includes(status) ? new Date() : null;
         const result = await db.query(query, [status, resolvedAt, requestId, mechanic_id]);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'Request not found' });
-        }
 
         const request = result.rows[0];
         notifyUser(request.driver_id, 'status_updated', request);

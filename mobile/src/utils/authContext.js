@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { initSocket } from './api';
+import { initSocket, disconnectSocket } from './api';
 import { initI18n } from './i18n';
 
 const AuthContext = createContext();
@@ -45,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        disconnectSocket();
         await AsyncStorage.multiRemove(['token', 'user']);
         setUser(null);
     };

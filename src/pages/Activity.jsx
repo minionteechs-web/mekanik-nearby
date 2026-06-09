@@ -67,9 +67,10 @@ export function Activity() {
                             <p className="activity-title">
                                 {req.mechanic_name ? `Help from ${req.mechanic_name}` : `Request #${req.id}`}
                             </p>
-                            {['accepted', 'en-route', 'arrived'].includes(req.status) && (
+                            {['pending', 'accepted', 'en-route', 'arrived'].includes(req.status) && (
                                 <span className="activity-action">
-                                    <MessageSquare size={14} /> Track live
+                                    <MessageSquare size={14} />
+                                    {req.status === 'pending' ? 'Track request' : 'Track live'}
                                     <ChevronRight size={14} />
                                 </span>
                             )}

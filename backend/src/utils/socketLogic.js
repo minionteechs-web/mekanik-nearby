@@ -8,7 +8,7 @@ const init = (server) => {
     io = socketIO(server, {
         cors: {
             origin: '*',
-        }
+        },
     });
 
     io.use((socket, next) => {
@@ -32,22 +32,19 @@ const init = (server) => {
     io.on('connection', (socket) => {
         console.log('User connected:', socket.id, 'userId:', socket.userId);
 
-        socket.on('join', (userId) => {
-            if (parseInt(userId, 10) !== socket.userId) {
-                return;
-            }
-            socket.join(`user_${userId}`);
-            console.log(`User ${userId} joined room user_${userId}`);
-        });
+        socket.join(`user_${socket.userId}`);
 
-        socket.on('new_message', (data) => {
-            io.to(`user_${data.receiverId}`).emit('new_message', data);
+        socket.on('join', (userId) => {
+            if (parseInt(userId, 10) === socket.userId) {
+                socket.join(`user_${userId}`);
+            }
         });
 
         socket.on('typing', (data) => {
+            if (!data?.receiverId) return;
             io.to(`user_${data.receiverId}`).emit('typing', {
                 sender_id: data.senderId,
-                request_id: data.request_id
+                request_id: Number(data.request_id),
             });
         });
 
@@ -55,7 +52,7 @@ const init = (server) => {
             io.to(`user_${data.to}`).emit('call_user', {
                 offer: data.offer,
                 from: data.from,
-                signalType: data.signalType
+                signalType: data.signalType,
             });
         });
 

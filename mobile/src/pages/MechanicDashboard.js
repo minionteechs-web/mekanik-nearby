@@ -68,7 +68,7 @@ export const MechanicDashboard = ({ navigation }) => {
 
     useEffect(() => {
         let locationInterval;
-        if (activeRequest && (activeRequest.status === 'en-route' || activeRequest.status === 'arrived')) {
+        if (activeRequest && ['accepted', 'en-route', 'arrived'].includes(activeRequest.status)) {
             locationInterval = setInterval(async () => {
                 const coords = await getCurrentLocation();
                 if (coords) {

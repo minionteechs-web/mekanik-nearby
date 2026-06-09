@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldAlert, X, Navigation, MessageSquare, Share2, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '../components/Button';
@@ -10,6 +10,7 @@ import { useToast } from '../components/Toast';
 import { mechanics as mechanicsApi, requests as requestsApi, initSocket } from '../utils/api';
 import { formatDistance } from '../utils/format';
 import { openGoogleMaps, openDirections } from '../utils/maps';
+import { mechanicFromRequest } from '../utils/requestHelpers';
 import './SOS.css';
 
 export function SOS() {
@@ -24,13 +25,26 @@ export function SOS() {
     const [requestStatus, setRequestStatus] = useState('pending');
     const [userPosition, setUserPosition] = useState(null);
     const [mechanicPosition, setMechanicPosition] = useState(null);
+    const [cancelling, setCancelling] = useState(false);
+    const activeRequestIdRef = useRef(null);
+
+    useEffect(() => {
+        activeRequestIdRef.current = activeRequestId;
+    }, [activeRequestId]);
 
     useEffect(() => {
         const socket = initSocket();
         if (!socket) return;
 
         const onAccepted = (data) => {
-            if (data.id === activeRequestId || searchParams.get('track') === String(data.id)) {
+            const trackId = searchParams.get('track');
+            if (
+                data.id === activeRequestIdRef.current ||
+                trackId === String(data.id) ||
+                (!activeRequestIdRef.current && data.driver_id)
+            ) {
+                setActiveRequestId(data.id);
+                activeRequestIdRef.current = data.id;
                 setRequestStatus('accepted');
                 setStatus('tracking');
                 showToast('Mechanic accepted your request!', 'success');
@@ -38,16 +52,21 @@ export function SOS() {
         };
 
         const onStatusUpdate = (data) => {
-            if (data.id === activeRequestId) {
+            if (data.id === activeRequestIdRef.current) {
                 setRequestStatus(data.status);
                 if (data.status === 'completed') {
                     showToast('Job completed. Stay safe!', 'success');
+                }
+                if (data.status === 'cancelled') {
+                    setStatus('idle');
+                    setActiveRequestId(null);
+                    activeRequestIdRef.current = null;
                 }
             }
         };
 
         const onMechanicLocation = (data) => {
-            if (data.requestId === activeRequestId) {
+            if (data.requestId === activeRequestIdRef.current) {
                 setMechanicPosition({ lat: data.lat, lng: data.lng, name: nearest?.name });
             }
         };
@@ -58,15 +77,19 @@ export function SOS() {
 
         const trackId = searchParams.get('track');
         if (trackId) {
-            setActiveRequestId(parseInt(trackId, 10));
+            const id = parseInt(trackId, 10);
+            setActiveRequestId(id);
+            activeRequestIdRef.current = id;
             setStatus('tracking');
-            requestsApi.getUserRequests().then((res) => {
-                const req = res.data.find((r) => r.id === parseInt(trackId, 10));
+            requestsApi.getUserRequests().then(async (res) => {
+                const req = res.data.find((r) => r.id === id);
                 if (req) {
                     setRequestStatus(req.status);
                     if (req.driver_lat) {
                         setUserPosition([req.driver_lat, req.driver_lng]);
                     }
+                    const mech = await mechanicFromRequest(req);
+                    if (mech) setNearest(mech);
                 }
             });
         }
@@ -76,7 +99,7 @@ export function SOS() {
             socket.off('status_updated', onStatusUpdate);
             socket.off('mechanic_location', onMechanicLocation);
         };
-    }, [activeRequestId, searchParams, showToast, nearest?.name]);
+    }, [searchParams, showToast, nearest?.name]);
 
     useEffect(() => {
         const mechanicId = searchParams.get('mechanicId');
@@ -157,11 +180,18 @@ export function SOS() {
                         lng: longitude,
                     });
                     setActiveRequestId(response.data.id);
+                    activeRequestIdRef.current = response.data.id;
                     setRequestStatus('pending');
                     setStatus('tracking');
                     showToast('Help request sent. Stay where you are.', 'success');
                 } catch (err) {
-                    setError('Failed to send request. The mechanic may be offline.');
+                    if (err.response?.status === 409) {
+                        const existingId = err.response?.data?.requestId;
+                        setError('You already have an active request. Open Activity to track it.');
+                        if (existingId) navigate(`/sos?track=${existingId}`);
+                    } else {
+                        setError('Failed to send request. The mechanic may be offline.');
+                    }
                 } finally {
                     setLoading(false);
                 }
@@ -171,6 +201,23 @@ export function SOS() {
                 setLoading(false);
             }
         );
+    };
+
+    const handleCancel = async () => {
+        if (!activeRequestId || !['pending', 'accepted'].includes(requestStatus)) return;
+        setCancelling(true);
+        try {
+            await requestsApi.cancel(activeRequestId);
+            setStatus('idle');
+            setActiveRequestId(null);
+            activeRequestIdRef.current = null;
+            setRequestStatus('pending');
+            showToast('Request cancelled', 'info');
+        } catch {
+            setError('Could not cancel request.');
+        } finally {
+            setCancelling(false);
+        }
     };
 
     const shareLocation = () => {
@@ -311,6 +358,16 @@ export function SOS() {
                             <Button className="flex-1" variant="secondary" onClick={shareLocation}>
                                 <Share2 size={18} style={{ marginRight: 8 }} /> Share
                             </Button>
+                            {['pending', 'accepted'].includes(requestStatus) && (
+                                <Button
+                                    className="flex-1"
+                                    variant="secondary"
+                                    onClick={handleCancel}
+                                    disabled={cancelling}
+                                >
+                                    {cancelling ? 'Cancelling...' : 'Cancel request'}
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>

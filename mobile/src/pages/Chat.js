@@ -20,44 +20,63 @@ export const Chat = ({ route, navigation }) => {
 
     const flatListRef = useRef();
 
+    const endCall = () => {
+        setCallStatus('idle');
+        const socket = getSocket();
+        if (socket && receiverId) {
+            socket.emit('hangup', { to: parseInt(receiverId, 10) });
+        }
+    };
+
     useEffect(() => {
-        fetchMessages();
-        const socket = getSocket() || initSocket();
+        let socket;
+        let onMessage;
+        let onTyping;
+        let onCallUser;
+        let onHangup;
 
-        if (socket) {
-            socket.on('new_message', (msg) => {
-                if (msg.request_id === parseInt(requestId)) {
-                    setMessages(prev => [...prev, msg]);
+        const setup = async () => {
+            await fetchMessages();
+            socket = getSocket() || await initSocket();
+            if (!socket) return;
+
+            onMessage = (msg) => {
+                if (Number(msg.request_id) === Number(requestId)) {
+                    setMessages((prev) => [...prev, msg]);
                 }
-            });
+            };
 
-            socket.on('typing', (data) => {
-                if (data.request_id === parseInt(requestId)) {
+            onTyping = (data) => {
+                if (Number(data.request_id) === Number(requestId)) {
                     setIsTyping(true);
                     setTimeout(() => setIsTyping(false), 3000);
                 }
-            });
+            };
 
-            socket.on('call_user', (data) => {
+            onCallUser = (data) => {
                 setCallStatus('receiving');
                 setCallType(data.signalType);
-                // Signaling is handled by the Web interface 
-            });
+            };
 
-            socket.on('hangup', () => {
-                setCallStatus('idle');
-            });
-        }
+            onHangup = () => setCallStatus('idle');
+
+            socket.on('new_message', onMessage);
+            socket.on('typing', onTyping);
+            socket.on('call_user', onCallUser);
+            socket.on('hangup', onHangup);
+        };
+
+        setup();
 
         return () => {
-            if (socket) {
-                socket.off('new_message');
-                socket.off('typing');
-                socket.off('call_user');
-                socket.off('hangup');
+            if (socket && onMessage) {
+                socket.off('new_message', onMessage);
+                socket.off('typing', onTyping);
+                socket.off('call_user', onCallUser);
+                socket.off('hangup', onHangup);
             }
         };
-    }, []);
+    }, [requestId, receiverId]);
 
     const fetchMessages = async () => {
         setLoading(true);
@@ -181,7 +200,11 @@ export const Chat = ({ route, navigation }) => {
                         onChangeText={(text) => {
                             setNewMessage(text);
                             const socket = getSocket();
-                            if (socket) socket.emit('typing', { receiverId, request_id: requestId, senderId: user.id });
+                            if (socket) socket.emit('typing', {
+                                receiverId: parseInt(receiverId, 10),
+                                request_id: parseInt(requestId, 10),
+                                senderId: user.id,
+                            });
                         }}
                         multiline
                     />

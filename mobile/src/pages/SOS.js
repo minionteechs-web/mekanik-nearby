@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { ShieldAlert, X, MessageSquare, Share2, Navigation } from 'lucide-react-native';
 import { COLORS, SPACING, RADIUS, SHADOW } from '../constants/theme';
@@ -10,6 +10,7 @@ import { getCurrentLocation } from '../utils/geo';
 import { formatDistance } from '../utils/format';
 import { openDirections, openGoogleMaps } from '../utils/maps';
 import { t } from '../utils/i18n';
+import { mechanicFromRequest } from '../utils/requestHelpers';
 
 export const SOS = ({ navigation, route }) => {
     const [status, setStatus] = useState('idle');
@@ -18,56 +19,83 @@ export const SOS = ({ navigation, route }) => {
     const [userLocation, setUserLocation] = useState(null);
     const [mechanicLocation, setMechanicLocation] = useState(null);
     const [requestStatus, setRequestStatus] = useState('pending');
+    const activeRequestIdRef = useRef(null);
+
+    useEffect(() => {
+        activeRequestIdRef.current = activeRequest?.id ?? null;
+    }, [activeRequest?.id]);
 
     useEffect(() => {
         let socket;
+        let onAccepted;
+        let onStatusUpdate;
+        let onMechanicLocation;
+
         (async () => {
             socket = await initSocket();
-            if (socket) {
-                socket.on('request_accepted', (data) => {
-                    if (data.id === activeRequest?.id) {
-                        setRequestStatus('accepted');
-                        setStatus('tracking');
+            if (!socket) return;
+
+            onAccepted = (data) => {
+                if (data.id === activeRequestIdRef.current || route?.params?.trackId === data.id) {
+                    setActiveRequest(data);
+                    activeRequestIdRef.current = data.id;
+                    setRequestStatus('accepted');
+                    setStatus('tracking');
+                }
+            };
+
+            onStatusUpdate = (data) => {
+                if (data.id === activeRequestIdRef.current) {
+                    setRequestStatus(data.status);
+                    if (data.status === 'cancelled') {
+                        setStatus('idle');
+                        setActiveRequest(null);
+                        activeRequestIdRef.current = null;
                     }
-                });
-                socket.on('status_updated', (data) => {
-                    if (data.id === activeRequest?.id) setRequestStatus(data.status);
-                });
-                socket.on('mechanic_location', (data) => {
-                    if (data.requestId === activeRequest?.id) {
-                        setMechanicLocation({
-                            latitude: data.lat,
-                            longitude: data.lng,
-                            title: nearest?.name || 'Mechanic',
-                        });
-                    }
-                });
-            }
+                }
+            };
+
+            onMechanicLocation = (data) => {
+                if (data.requestId === activeRequestIdRef.current) {
+                    setMechanicLocation({
+                        latitude: data.lat,
+                        longitude: data.lng,
+                        title: nearest?.name || 'Mechanic',
+                    });
+                }
+            };
+
+            socket.on('request_accepted', onAccepted);
+            socket.on('status_updated', onStatusUpdate);
+            socket.on('mechanic_location', onMechanicLocation);
         })();
 
         const trackId = route?.params?.trackId;
         if (trackId) {
             setStatus('tracking');
-            requests.getUserRequests().then((res) => {
+            requests.getUserRequests().then(async (res) => {
                 const req = res.data.find((r) => r.id === trackId);
                 if (req) {
                     setActiveRequest(req);
+                    activeRequestIdRef.current = req.id;
                     setRequestStatus(req.status);
                     if (req.driver_lat) {
                         setUserLocation({ latitude: req.driver_lat, longitude: req.driver_lng });
                     }
+                    const mech = await mechanicFromRequest(req);
+                    if (mech) setNearest(mech);
                 }
             });
         }
 
         return () => {
-            if (socket) {
-                socket.off('request_accepted');
-                socket.off('status_updated');
-                socket.off('mechanic_location');
+            if (socket && onAccepted) {
+                socket.off('request_accepted', onAccepted);
+                socket.off('status_updated', onStatusUpdate);
+                socket.off('mechanic_location', onMechanicLocation);
             }
         };
-    }, [activeRequest?.id, nearest?.name, route?.params?.trackId]);
+    }, [nearest?.name, route?.params?.trackId]);
 
     useEffect(() => {
         const mechanicId = route?.params?.mechanicId;
@@ -118,10 +146,32 @@ export const SOS = ({ navigation, route }) => {
             });
 
             setActiveRequest(requestRes.data);
+            activeRequestIdRef.current = requestRes.data.id;
             setRequestStatus('pending');
             setStatus('tracking');
         } catch (err) {
-            Alert.alert('Request Failed', 'Could not send help request.');
+            if (err.response?.status === 409) {
+                const existingId = err.response?.data?.requestId;
+                Alert.alert('Active request', 'You already have a help request in progress.', [
+                    { text: 'Track it', onPress: () => navigation.navigate('SOS', { trackId: existingId }) },
+                    { text: 'OK' },
+                ]);
+            } else {
+                Alert.alert('Request Failed', 'Could not send help request.');
+            }
+        }
+    };
+
+    const handleCancel = async () => {
+        if (!activeRequest?.id || !['pending', 'accepted'].includes(requestStatus)) return;
+        try {
+            await requests.cancel(activeRequest.id);
+            setStatus('idle');
+            setActiveRequest(null);
+            activeRequestIdRef.current = null;
+            Alert.alert('Cancelled', 'Your help request was cancelled.');
+        } catch {
+            Alert.alert('Error', 'Could not cancel request.');
         }
     };
 
@@ -173,6 +223,11 @@ export const SOS = ({ navigation, route }) => {
                         {userLocation && (
                             <Button style={styles.flex1} variant="secondary" onPress={() => openGoogleMaps(userLocation.latitude, userLocation.longitude, 'My location')}>
                                 Share
+                            </Button>
+                        )}
+                        {['pending', 'accepted'].includes(requestStatus) && (
+                            <Button style={styles.flex1} variant="secondary" onPress={handleCancel}>
+                                Cancel
                             </Button>
                         )}
                     </View>

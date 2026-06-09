@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Wrench, MapPin, ChevronUp, Navigation } from 'lucide-react';
 import { MapComponent } from '../components/MapComponent';
 import { MechanicCard } from '../components/MechanicCard';
-import { mechanics as mechanicsApi } from '../utils/api';
+import { mechanics as mechanicsApi, initSocket } from '../utils/api';
+import { useToast } from '../components/Toast';
 import { getGreeting } from '../utils/format';
 import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
 import './Home.css';
 
 export function Home() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [userLoc, setUserLoc] = useState(null);
     const [userName, setUserName] = useState('Driver');
     const [locationLabel, setLocationLabel] = useState('Locating you...');
@@ -46,8 +48,24 @@ export function Home() {
         }
         const userData = JSON.parse(userStr);
         setUserName(userData.username || 'Driver');
+        const socket = initSocket();
         loadLocationAndMechanics();
-    }, [navigate]);
+
+        if (socket) {
+            const onAccepted = () => showToast('Mechanic accepted your SOS — open Activity to track', 'success');
+            const onStatus = (data) => {
+                if (['en-route', 'arrived', 'completed'].includes(data.status)) {
+                    showToast(`Help request: ${data.status.replace('-', ' ')}`, 'info');
+                }
+            };
+            socket.on('request_accepted', onAccepted);
+            socket.on('status_updated', onStatus);
+            return () => {
+                socket.off('request_accepted', onAccepted);
+                socket.off('status_updated', onStatus);
+            };
+        }
+    }, [navigate, showToast]);
 
     const previewMechanics = sheetExpanded ? nearbyMechanics : nearbyMechanics.slice(0, 2);
 
