@@ -22,11 +22,37 @@ export const Home = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
     const [sheetExpanded, setSheetExpanded] = useState(false);
     const [mapRegion, setMapRegion] = useState(DEFAULT_REGION);
+    const [liveUpdate, setLiveUpdate] = useState('');
 
     useEffect(() => {
         loadUserData();
         setupLocationAndMechanics();
-        initSocket();
+
+        let socket;
+        let onAccepted;
+        let onStatus;
+
+        (async () => {
+            socket = await initSocket();
+            if (!socket) return;
+
+            onAccepted = () => setLiveUpdate('Mechanic accepted your SOS — check Activity');
+            onStatus = (data) => {
+                if (['en-route', 'arrived', 'completed'].includes(data.status)) {
+                    setLiveUpdate(`Help request: ${data.status.replace('-', ' ')}`);
+                }
+            };
+
+            socket.on('request_accepted', onAccepted);
+            socket.on('status_updated', onStatus);
+        })();
+
+        return () => {
+            if (socket && onAccepted) {
+                socket.off('request_accepted', onAccepted);
+                socket.off('status_updated', onStatus);
+            }
+        };
     }, []);
 
     const loadUserData = async () => {
@@ -108,6 +134,11 @@ export const Home = ({ navigation }) => {
                                     <Text style={styles.retryLink}>Enable location</Text>
                                 </TouchableOpacity>
                             )}
+                            {liveUpdate ? (
+                                <TouchableOpacity onPress={() => navigation.navigate('Activity')}>
+                                    <Text style={styles.liveUpdate}>{liveUpdate} →</Text>
+                                </TouchableOpacity>
+                            ) : null}
                         </View>
                         {!loading && !locationError && nearbyMechanics.length > 0 && (
                             <View style={styles.nearbyChip}>
@@ -192,6 +223,7 @@ const styles = StyleSheet.create({
     locationLine: { fontSize: 12, color: COLORS.textMuted, flex: 1 },
     locationError: { color: COLORS.danger },
     retryLink: { fontSize: 12, fontWeight: '700', color: COLORS.brand, marginTop: 4 },
+    liveUpdate: { fontSize: 12, fontWeight: '700', color: COLORS.success, marginTop: 4 },
     nearbyChip: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -5,6 +5,7 @@ import { COLORS, SPACING, RADIUS, SHADOW } from '../constants/theme';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LiveMap } from '../components/LiveMap';
+import { StatusTimeline } from '../components/StatusTimeline';
 import { requests, mechanics, initSocket } from '../utils/api';
 import { getCurrentLocation } from '../utils/geo';
 import { formatDistance } from '../utils/format';
@@ -201,6 +202,8 @@ export const SOS = ({ navigation, route }) => {
                     </Text>
                     <Text style={styles.trackingSub}>Live map · Real roads & GPS tracking</Text>
                     {nearest && <Text style={styles.mechLine}>Notified: <Text style={styles.bold}>{nearest.name}</Text></Text>}
+
+                    <StatusTimeline currentStatus={requestStatus} />
 
                     <View style={styles.actionRow}>
                         {activeRequest && nearest && (

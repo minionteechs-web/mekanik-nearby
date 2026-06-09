@@ -79,7 +79,7 @@ exports.getMyRequests = async (req, res) => {
         let query;
         if (role === 'mechanic') {
             query = `
-                SELECT sr.*, u.username as driver_name
+                SELECT sr.*, u.username as driver_name, u.phone as driver_phone
                 FROM service_requests sr
                 JOIN users u ON sr.driver_id = u.id
                 WHERE sr.mechanic_id = $1

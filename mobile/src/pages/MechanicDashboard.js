@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, FlatList, Linking } from 'react-native';
 import { MapPin, Bell, User, CheckCircle, Navigation, Phone } from 'lucide-react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { Card } from '../components/Card';
@@ -185,7 +185,17 @@ export const MechanicDashboard = ({ navigation }) => {
                                     >
                                         Chat
                                     </Button>
-                                    <Button style={styles.flex1} variant="secondary">
+                                    <Button
+                                        style={styles.flex1}
+                                        variant="secondary"
+                                        onPress={() => {
+                                            if (activeRequest.driver_phone) {
+                                                Linking.openURL(`tel:${activeRequest.driver_phone}`);
+                                            } else {
+                                                Alert.alert('No phone', 'Driver has no phone number on file.');
+                                            }
+                                        }}
+                                    >
                                         <Phone size={18} color="white" style={{ marginRight: 8 }} /> Call
                                     </Button>
                                 </View>

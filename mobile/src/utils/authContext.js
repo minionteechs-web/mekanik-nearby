@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initSocket, disconnectSocket } from './api';
+import { refreshUserLocation } from './location';
 import { initI18n } from './i18n';
 
 const AuthContext = createContext();
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }) => {
         await AsyncStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
         await initSocket();
+        refreshUserLocation().catch(() => {});
     };
 
     const logout = async () => {
