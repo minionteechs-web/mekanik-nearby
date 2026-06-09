@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { COLORS, RADIUS } from '../constants/theme';
-import { DEFAULT_REGION } from '../constants/mapStyles';
+import { RADIUS } from '../constants/theme';
+import { DEFAULT_REGION, DARK_MAP_STYLE } from '../constants/mapStyles';
+import { useTheme } from '../utils/themeContext';
 
 let MapView, Marker, Circle, PROVIDER_GOOGLE;
 if (Platform.OS !== 'web') {
@@ -22,6 +23,7 @@ export function LiveMap({
     fitToCoordinates,
 }) {
     const mapRef = useRef(null);
+    const { isDark, colors } = useTheme();
 
     useEffect(() => {
         if (!mapRef.current || !fitToCoordinates?.length) return;
@@ -33,10 +35,10 @@ export function LiveMap({
 
     if (Platform.OS === 'web') {
         return (
-            <View style={[styles.fallback, style]}>
+            <View style={[styles.fallback, { backgroundColor: colors.bgCard, borderColor: colors.border }, style]}>
                 <Text style={styles.fallbackIcon}>🗺️</Text>
-                <Text style={styles.fallbackTitle}>Live street map</Text>
-                <Text style={styles.fallbackText}>
+                <Text style={[styles.fallbackTitle, { color: colors.textMain }]}>Live street map</Text>
+                <Text style={[styles.fallbackText, { color: colors.textMuted }]}>
                     Use the Android or iOS app for the full Google Maps experience with real roads and live tracking.
                 </Text>
             </View>
@@ -58,6 +60,8 @@ export function LiveMap({
             showsBuildings
             showsIndoors={false}
             mapType="standard"
+            customMapStyle={isDark ? DARK_MAP_STYLE : undefined}
+            userInterfaceStyle={isDark ? 'dark' : 'light'}
         >
             {userLocation && (
                 <Circle
@@ -99,15 +103,13 @@ const styles = StyleSheet.create({
     },
     fallback: {
         flex: 1,
-        backgroundColor: '#1a2332',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
         borderRadius: RADIUS.lg,
         borderWidth: 1,
-        borderColor: COLORS.border,
     },
     fallbackIcon: { fontSize: 40, marginBottom: 12 },
-    fallbackTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textMain, marginBottom: 8 },
-    fallbackText: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+    fallbackTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+    fallbackText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 });

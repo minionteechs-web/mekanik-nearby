@@ -17,6 +17,7 @@ import { Chat } from './src/pages/Chat';
 import { TwoFactorSetup } from './src/pages/TwoFactorSetup';
 import { MechanicOnboard } from './src/pages/MechanicOnboard';
 import { Activity } from './src/pages/Activity';
+import { Terms } from './src/pages/Terms';
 
 import { AuthProvider } from './src/utils/authContext';
 import { ThemeProvider, useTheme } from './src/utils/themeContext';
@@ -52,6 +53,7 @@ function AppNavigation() {
                 <Stack.Screen name="Splash" component={Splash} />
                 <Stack.Screen name="Login" component={Login} />
                 <Stack.Screen name="Register" component={Register} />
+                <Stack.Screen name="Terms" component={Terms} />
                 <Stack.Screen name="Home" component={Home} />
                 <Stack.Screen name="Mechanics" component={MechanicList} />
                 <Stack.Screen name="MechanicDetail" component={MechanicDetail} />

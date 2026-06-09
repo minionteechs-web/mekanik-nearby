@@ -1,0 +1,33 @@
+.terms-agreement {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin: 1.25rem 0 1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.terms-agreement-checkbox {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    accent-color: var(--color-brand);
+    cursor: pointer;
+}
+
+.terms-agreement-text {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    line-height: 1.45;
+}
+
+.terms-agreement-text a {
+    color: var(--color-brand);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.terms-agreement-text a:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,60 @@
+.terms-page {
+    position: relative;
+    min-height: 100vh;
+    padding: 3.5rem 1.5rem 2rem;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.terms-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.terms-header h1 {
+    font-size: 1.75rem;
+    color: var(--color-brand);
+    margin: 1rem 0 0.35rem;
+}
+
+.terms-header p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.terms-body {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+}
+
+.terms-section + .terms-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.terms-section h2 {
+    font-size: 1.15rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-text-main);
+}
+
+.terms-section p {
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin-bottom: 0.75rem;
+}
+
+.terms-footer {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.terms-footer a {
+    color: var(--color-brand);
+    font-weight: 600;
+    text-decoration: none;
+}

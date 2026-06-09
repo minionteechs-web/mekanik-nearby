@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { COLORS, RADIUS } from '../constants/theme';
-import { DEFAULT_REGION } from '../constants/mapStyles';
+import { RADIUS } from '../constants/theme';
+import { DEFAULT_REGION, DARK_MAP_STYLE } from '../constants/mapStyles';
+import { useTheme } from '../utils/themeContext';
 
 let MapView, Marker, Polyline, PROVIDER_GOOGLE;
 if (Platform.OS !== 'web') {
@@ -14,6 +15,7 @@ if (Platform.OS !== 'web') {
 
 export function RouteMap({ path = [], start, end, mechanics = [], userLocation = null, height = 260 }) {
     const mapRef = useRef(null);
+    const { isDark, colors } = useTheme();
 
     const coordinates = useMemo(
         () => path.map(([lat, lng]) => ({ latitude: lat, longitude: lng })),
@@ -35,10 +37,10 @@ export function RouteMap({ path = [], start, end, mechanics = [], userLocation =
 
     if (Platform.OS === 'web' || !MapView) {
         return (
-            <View style={[styles.fallback, { height }]}>
+            <View style={[styles.fallback, { height, backgroundColor: colors.bgCard, borderColor: colors.border }]}>
                 <Text style={styles.fallbackIcon}>🗺️</Text>
-                <Text style={styles.fallbackTitle}>Route map</Text>
-                <Text style={styles.fallbackText}>
+                <Text style={[styles.fallbackTitle, { color: colors.textMain }]}>Route map</Text>
+                <Text style={[styles.fallbackText, { color: colors.textMuted }]}>
                     {start?.label || start?.name} → {end?.label || end?.name}
                 </Text>
             </View>
@@ -50,7 +52,7 @@ export function RouteMap({ path = [], start, end, mechanics = [], userLocation =
         : DEFAULT_REGION;
 
     return (
-        <View style={[styles.wrapper, { height }]}>
+        <View style={[styles.wrapper, { height, borderColor: colors.border }]}>
             <MapView
                 ref={mapRef}
                 provider={PROVIDER_GOOGLE}
@@ -58,6 +60,8 @@ export function RouteMap({ path = [], start, end, mechanics = [], userLocation =
                 initialRegion={initialRegion}
                 showsUserLocation={!userLocation}
                 showsCompass
+                customMapStyle={isDark ? DARK_MAP_STYLE : undefined}
+                userInterfaceStyle={isDark ? 'dark' : 'light'}
             >
                 {userLocation?.lat != null && (
                     <Marker
@@ -70,7 +74,7 @@ export function RouteMap({ path = [], start, end, mechanics = [], userLocation =
                 {coordinates.length > 1 && (
                     <Polyline
                         coordinates={coordinates}
-                        strokeColor={COLORS.brand}
+                        strokeColor={colors.brand}
                         strokeWidth={4}
                     />
                 )}
@@ -100,7 +104,7 @@ export function RouteMap({ path = [], start, end, mechanics = [], userLocation =
                             coordinate={{ latitude: m.lat, longitude: m.lng }}
                             title={m.name}
                             description={m.specialty}
-                            pinColor={m.is_available ? COLORS.brand : '#9CA3AF'}
+                            pinColor={m.is_available ? colors.brand : '#9CA3AF'}
                         />
                     ) : null
                 )}
@@ -114,21 +118,18 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.lg,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: COLORS.border,
     },
     map: {
         flex: 1,
     },
     fallback: {
-        backgroundColor: '#1a2332',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
         borderRadius: RADIUS.lg,
         borderWidth: 1,
-        borderColor: COLORS.border,
     },
     fallbackIcon: { fontSize: 36, marginBottom: 8 },
-    fallbackTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textMain, marginBottom: 4 },
-    fallbackText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
+    fallbackTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+    fallbackText: { fontSize: 13, textAlign: 'center' },
 });

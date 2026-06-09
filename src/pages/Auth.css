@@ -94,7 +94,7 @@
     flex: 1;
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid #333;
+    border: 1px solid var(--color-border);
     background: transparent;
     color: var(--color-text-muted);
     cursor: pointer;
@@ -112,6 +112,7 @@
     justify-content: flex-start;
     padding-top: 3.5rem;
     padding-bottom: 2rem;
+    overflow-y: auto;
 }
 
 .role-cards {
@@ -209,6 +210,38 @@
     display: flex;
     flex-direction: column;
     gap: 0;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.mechanic-section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(255, 107, 53, 0.08);
+    border: 1px solid rgba(255, 107, 53, 0.22);
+    color: var(--color-text-main);
+}
+
+.mechanic-section-header svg {
+    flex-shrink: 0;
+    color: var(--color-brand);
+    margin-top: 2px;
+}
+
+.mechanic-section-header strong {
+    display: block;
+    font-size: 0.92rem;
+    margin-bottom: 0.15rem;
+}
+
+.mechanic-section-header span {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
 }
 
 .auth-select-label {

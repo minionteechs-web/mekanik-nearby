@@ -1,7 +1,8 @@
 import { MapContainer, TileLayer, Polyline, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
 import L from 'leaflet';
-import { MAP_TILES } from '../constants/mapConfig';
+import { MAP_TILES, resolveMapStyle } from '../constants/mapConfig';
+import { useTheme } from '../context/ThemeContext';
 import './RouteMap.css';
 
 const pinIcon = (color, label) =>
@@ -33,8 +34,10 @@ export function RouteMap({
     height = 280,
     className = '',
 }) {
+    const { isDark } = useTheme();
+    const tileKey = resolveMapStyle('live', isDark);
+    const tile = MAP_TILES[tileKey];
     const center = path[0] || (start ? [start.lat, start.lng] : [6.5244, 3.3792]);
-    const tile = MAP_TILES.live;
 
     return (
         <div className={`route-map-wrapper ${className}`} style={{ height }}>

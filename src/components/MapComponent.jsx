@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigation, Radio } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { MAP_TILES, DEFAULT_ZOOM, MIN_LABEL_ZOOM } from '../constants/mapConfig';
+import { MAP_TILES, DEFAULT_ZOOM, MIN_LABEL_ZOOM, resolveMapStyle } from '../constants/mapConfig';
+import { useTheme } from '../context/ThemeContext';
 import { formatDistance } from '../utils/format';
 import './MapComponent.css';
 
@@ -91,8 +92,8 @@ function ZoomTracker({ onZoomChange }) {
 }
 
 function MapTiles({ style = 'live' }) {
-    if (style === 'live' && MAP_TILES.live) {
-        const { base, labels } = MAP_TILES.live;
+    if ((style === 'live' || style === 'liveLight') && MAP_TILES[style]) {
+        const { base, labels } = MAP_TILES[style];
         return (
             <>
                 <TileLayer
@@ -136,11 +137,13 @@ export function MapComponent({
     showLiveBadge = true,
     fitToMarkers = false,
     scrollWheelZoom = true,
-    mapStyle = 'live',
+    mapStyle = 'auto',
     onMarkerClick,
     className = '',
     accuracyMeters = 80,
 }) {
+    const { isDark } = useTheme();
+    const resolvedMapStyle = resolveMapStyle(mapStyle, isDark);
     const [currentZoom, setCurrentZoom] = useState(zoom);
     const showMechanicNames = currentZoom >= MIN_LABEL_ZOOM;
 
@@ -169,7 +172,7 @@ export function MapComponent({
                 <ZoomTracker onZoomChange={setCurrentZoom} />
                 {fitToMarkers && <FitBounds points={boundsPoints} />}
 
-                <MapTiles style={mapStyle} />
+                <MapTiles style={resolvedMapStyle} />
                 <ZoomControl position="topright" />
 
                 {showUserLocation && center?.[0] != null && (

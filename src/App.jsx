@@ -16,6 +16,7 @@ import { MechanicOnboard } from './pages/MechanicOnboard';
 import { Chat } from './pages/Chat';
 import { ResetPassword } from './pages/ResetPassword';
 import { TwoFactorSetup } from './pages/TwoFactorSetup';
+import { Terms } from './pages/Terms';
 
 function App() {
     return (
@@ -26,6 +27,7 @@ function App() {
                         <Route path="/" element={<Splash />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/terms" element={<Terms />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
                         <Route path="/mechanic-onboard" element={<MechanicOnboard />} />
                         <Route path="/chat/:requestId" element={<Chat />} />

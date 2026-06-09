@@ -15,8 +15,8 @@
 .input-field {
     padding: 0.75rem 1rem;
     border-radius: var(--radius-md);
-    border: 1px solid #333;
-    background-color: #2A2A2A;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg-input);
     color: var(--color-text-main);
     font-family: var(--font-body);
     font-size: 1rem;
@@ -30,5 +30,14 @@
 }
 
 .input-field::placeholder {
-    color: #666;
+    color: var(--color-text-subtle);
+}
+
+.input-field:-webkit-autofill,
+.input-field:-webkit-autofill:hover,
+.input-field:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-bg-input) inset;
+    -webkit-text-fill-color: var(--color-text-main);
+    caret-color: var(--color-text-main);
+    transition: background-color 5000s ease-in-out 0s;
 }
