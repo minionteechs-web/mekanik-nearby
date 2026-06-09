@@ -141,3 +141,30 @@ export const getLocationErrorMessage = (err) => {
     if (err instanceof LocationError) return err.message;
     return 'Could not determine your location. Enable GPS and try again.';
 };
+
+/** Live GPS updates — works offline (satellite only). */
+export const watchUserLocation = (onUpdate) => {
+    if (!('geolocation' in navigator)) return () => {};
+
+    const watchId = navigator.geolocation.watchPosition(
+        async (pos) => {
+            let label = 'Your current position (GPS)';
+            try {
+                label = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+            } catch {
+                /* offline label is fine */
+            }
+            onUpdate({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+                label,
+                source: 'gps',
+            });
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 3000, timeout: 20000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+};

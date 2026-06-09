@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Home, Search, ShieldAlert, ClipboardList, User, Wrench } from 'lucide-react-native';
+import { Home, Search, ShieldAlert, ClipboardList, Wrench } from 'lucide-react-native';
 import { COLORS, SPACING, SHADOW } from '../constants/theme';
+import { ProfileAvatar } from './ProfileAvatar';
 
 export const BottomTabBar = ({ navigation, current, user }) => {
     const isMechanic = user?.role === 'mechanic';
@@ -11,12 +12,12 @@ export const BottomTabBar = ({ navigation, current, user }) => {
         { name: 'Mechanics', icon: Search, label: 'Find' },
         { name: 'SOS', icon: ShieldAlert, fab: true },
         { name: 'Activity', icon: ClipboardList, label: 'Activity' },
-        { name: 'Profile', icon: User, label: 'Profile' },
+        { name: 'Profile', label: 'Profile', isProfile: true },
     ];
 
     const mechanicTabs = [
         { name: 'MechanicHome', icon: Wrench, label: 'Jobs' },
-        { name: 'Profile', icon: User, label: 'Profile' },
+        { name: 'Profile', label: 'Profile', isProfile: true },
     ];
 
     const tabs = isMechanic ? mechanicTabs : driverTabs;
@@ -26,6 +27,23 @@ export const BottomTabBar = ({ navigation, current, user }) => {
             {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const active = current === tab.name;
+
+                if (tab.isProfile) {
+                    return (
+                        <TouchableOpacity
+                            key={tab.name}
+                            style={styles.tab}
+                            onPress={() => navigation.navigate(tab.name)}
+                        >
+                            <ProfileAvatar
+                                name={user?.username || 'User'}
+                                size={28}
+                                active={active}
+                            />
+                            <Text style={[styles.label, active && styles.labelActive]}>{tab.label}</Text>
+                        </TouchableOpacity>
+                    );
+                }
 
                 if (tab.fab) {
                     return (

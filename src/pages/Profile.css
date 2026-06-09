@@ -186,3 +186,208 @@
     color: var(--color-danger);
     font-weight: 700;
 }
+
+.profile-page .profile-hero .profile-avatar-circle.large {
+    margin-bottom: 1rem;
+}
+
+.profile-section-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--color-text-muted);
+    margin: 0 0 0.65rem;
+}
+
+.profile-settings-card {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.profile-field span {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.profile-field input {
+    background: var(--color-bg-input, #1a1a1a);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    color: var(--color-text-main);
+    font-size: 0.95rem;
+}
+
+.profile-field.disabled input {
+    opacity: 0.6;
+}
+
+.profile-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.profile-save-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.25rem;
+    padding: 0.7rem 1rem;
+    border: none;
+    border-radius: 10px;
+    background: var(--color-brand);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.profile-save-btn.secondary {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--color-brand);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.profile-save-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.profile-toggles {
+    gap: 0;
+    padding: 0;
+}
+
+.profile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+}
+
+.profile-toggle:last-child {
+    border-bottom: none;
+}
+
+.profile-toggle > div {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--color-text-main);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.profile-toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-brand);
+}
+
+.profile-setting-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+}
+
+.profile-setting-row.clickable {
+    cursor: pointer;
+    align-items: center;
+}
+
+.profile-setting-row-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-setting-row-body h4 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.profile-setting-row-body p {
+    margin: 0.25rem 0 0;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+
+.profile-link-btn {
+    margin-top: 0.35rem;
+    background: none;
+    border: none;
+    color: var(--color-brand);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.85rem;
+}
+
+.profile-password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.profile-password-form input {
+    background: var(--color-bg-input, #1a1a1a);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem;
+    color: var(--color-text-main);
+}
+
+.profile-password-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.profile-password-actions button {
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.profile-password-actions button:first-child {
+    background: var(--color-brand);
+    color: #fff;
+}
+
+.profile-password-actions button:last-child {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-text-muted);
+}
+
+.profile-version {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin: 1.5rem 0 0.5rem;
+}
+
+.profile-2fa-qr {
+    display: block;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 1rem;
+    border-radius: 12px;
+    background: #fff;
+    padding: 8px;
+}

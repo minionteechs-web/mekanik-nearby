@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { ChevronLeft, Map, Navigation, Download, CheckCircle, Clock, Ruler, ExternalLink } from 'lucide-react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
@@ -10,10 +10,11 @@ import { RouteDirections } from '../components/RouteDirections';
 import { RouteInsights } from '../components/RouteInsights';
 import { downloadRouteMechanics } from '../utils/routePlanner';
 import { planRoute } from '../utils/routeGeometry';
-import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
+import { refreshUserLocation, getLocationErrorMessage, watchUserLocation } from '../utils/location';
+import { rankMechanicsByGps } from '../utils/offlineMechanics';
+import { formatBytes, formatDistance } from '../utils/format';
 import { getSavedRoute, listSavedRoutes } from '../utils/storage';
 import { openRouteInGoogleMaps } from '../utils/maps';
-import { formatBytes } from '../utils/format';
 
 export const RoutePlanner = ({ navigation, route: navRoute }) => {
     const [start, setStart] = useState('');
@@ -55,6 +56,16 @@ export const RoutePlanner = ({ navigation, route: navRoute }) => {
         loadSaved();
     }, [navRoute?.params?.routeId]);
 
+    useEffect(() => {
+        if (!result?.route) return undefined;
+        let cleanup = () => {};
+        watchUserLocation((loc) => {
+            setUserLocation(loc);
+            setLocationError('');
+        }).then((stop) => { cleanup = stop; });
+        return () => cleanup();
+    }, [result?.id]);
+
     const handlePreview = async () => {
         if (!start.trim() || !end.trim()) {
             return Alert.alert('Error', 'Enter both start and destination');
@@ -90,7 +101,18 @@ export const RoutePlanner = ({ navigation, route: navRoute }) => {
     };
 
     const activeRoute = result?.route || preview;
-    const mapMechanics = result?.mechanics || [];
+
+    const mapMechanics = useMemo(() => {
+        if (result?.mechanics?.length && userLocation?.lat != null) {
+            return rankMechanicsByGps(result.mechanics, userLocation.lat, userLocation.lng);
+        }
+        return result?.mechanics || [];
+    }, [result, userLocation]);
+
+    const nearestOffline = useMemo(
+        () => (mapMechanics.length ? mapMechanics.slice(0, 3) : []),
+        [mapMechanics]
+    );
 
     return (
         <SafeAreaView style={styles.container}>
@@ -194,11 +216,18 @@ export const RoutePlanner = ({ navigation, route: navRoute }) => {
                             )}
                         </View>
 
+                        {result && userLocation && (
+                            <Text style={styles.breakdownBanner}>
+                                You are here on your saved route — blue pin uses GPS even offline.
+                            </Text>
+                        )}
+
                         <RouteMap
                             path={activeRoute.path}
                             start={activeRoute.start}
                             end={activeRoute.end}
                             mechanics={mapMechanics}
+                            userLocation={result ? userLocation : null}
                             height={260}
                         />
 
@@ -213,11 +242,27 @@ export const RoutePlanner = ({ navigation, route: navRoute }) => {
                         <RouteDirections steps={activeRoute.steps} collapsedDefault={!!result} />
                         <RouteInsights elevation={activeRoute.elevation} restStops={activeRoute.restStops} />
 
+                        {result && nearestOffline.length > 0 && userLocation && (
+                            <View style={styles.nearbyBox}>
+                                <Text style={styles.nearbyTitle}>Nearest cached mechanics to you now</Text>
+                                {nearestOffline.map((m) => (
+                                    <TouchableOpacity
+                                        key={m.id}
+                                        onPress={() => navigation.navigate('MechanicDetail', { id: m.id })}
+                                    >
+                                        <Text style={styles.nearbyItem}>
+                                            {m.name} — {formatDistance(m.distance_meters)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+
                         {result ? (
                             <View style={styles.successBox}>
                                 <CheckCircle size={20} color={COLORS.success} />
                                 <Text style={styles.successText}>
-                                    {result.count} mechanics saved ({formatBytes(JSON.stringify(result).length)})
+                                    {result.count} mechanics saved — route details work offline ({formatBytes(JSON.stringify(result).length)})
                                 </Text>
                             </View>
                         ) : (
@@ -297,6 +342,26 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(66, 133, 244, 0.1)',
     },
     googleBtnText: { fontSize: 14, fontWeight: '600', color: '#60A5FA' },
+    breakdownBanner: {
+        fontSize: 12,
+        color: '#60A5FA',
+        marginBottom: SPACING.sm,
+        padding: SPACING.sm,
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderRadius: RADIUS.md,
+        borderWidth: 1,
+        borderColor: 'rgba(59, 130, 246, 0.25)',
+    },
+    nearbyBox: {
+        marginTop: SPACING.lg,
+        padding: SPACING.md,
+        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+        borderRadius: RADIUS.md,
+        borderWidth: 1,
+        borderColor: 'rgba(16, 185, 129, 0.2)',
+    },
+    nearbyTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textMain, marginBottom: SPACING.sm },
+    nearbyItem: { fontSize: 13, color: COLORS.brand, paddingVertical: 6 },
     successBox: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -26,9 +26,23 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    gap: 0.75rem;
     background: linear-gradient(180deg, rgba(15, 15, 15, 0.9) 0%, transparent 100%);
     z-index: 10;
     pointer-events: none;
+}
+
+.home-header-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.home-header-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    pointer-events: auto;
 }
 
 .home-greeting-text {

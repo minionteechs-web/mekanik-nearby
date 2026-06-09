@@ -15,6 +15,7 @@ import { MechanicDashboard } from './pages/MechanicDashboard';
 import { MechanicOnboard } from './pages/MechanicOnboard';
 import { Chat } from './pages/Chat';
 import { ResetPassword } from './pages/ResetPassword';
+import { TwoFactorSetup } from './pages/TwoFactorSetup';
 
 function App() {
     return (
@@ -36,6 +37,7 @@ function App() {
                             <Route path="/sos" element={<SOS />} />
                             <Route path="/route-planner" element={<RoutePlanner />} />
                             <Route path="/profile" element={<Profile />} />
+                            <Route path="/two-factor-setup" element={<TwoFactorSetup />} />
                             <Route path="/activity" element={<Activity />} />
                             <Route path="/mechanic-dashboard" element={<MechanicDashboard />} />
                         </Route>

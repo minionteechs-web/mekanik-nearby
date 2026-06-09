@@ -5,8 +5,8 @@ import { MechanicCard } from '../components/MechanicCard';
 import { EmptyState } from '../components/EmptyState';
 import { MechanicCardSkeleton } from '../components/Skeleton';
 import { mechanics as mechanicsApi } from '../utils/api';
-import { getAllCachedMechanics } from '../utils/routeStorage';
 import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
+import { getOfflineMechanicsNear, isProbablyOffline } from '../utils/offlineMechanics';
 import './MechanicList.css';
 
 export function MechanicList() {
@@ -19,23 +19,39 @@ export function MechanicList() {
     const [fromCache, setFromCache] = useState(false);
 
     const loadMechanics = async () => {
+        setLoading(true);
+        setFromCache(false);
+        setError('');
         try {
-            setLoading(true);
-            setFromCache(false);
-            setError('');
             const location = await refreshUserLocation();
-            const response = await mechanicsApi.getNearby(location.lat, location.lng, 50);
-            setMechanics(response.data);
+
+            if (isProbablyOffline()) {
+                const offline = await getOfflineMechanicsNear(location.lat, location.lng);
+                if (offline.length) {
+                    setMechanics(offline);
+                    setFromCache(true);
+                    setError('Offline — showing mechanics from your saved route, sorted by your GPS.');
+                    return;
+                }
+            }
+
+            try {
+                const response = await mechanicsApi.getNearby(location.lat, location.lng, 50);
+                setMechanics(response.data);
+            } catch (apiErr) {
+                const offline = await getOfflineMechanicsNear(location.lat, location.lng);
+                if (offline.length) {
+                    setMechanics(offline);
+                    setFromCache(true);
+                    setError('No signal — showing cached route mechanics near your current location.');
+                } else {
+                    throw apiErr;
+                }
+            }
         } catch (err) {
             console.error('Error fetching mechanics:', err);
-            const cached = await getAllCachedMechanics();
-            if (cached.length) {
-                setMechanics(cached);
-                setFromCache(true);
-                setError(getLocationErrorMessage(err));
-            } else {
-                setError(getLocationErrorMessage(err));
-            }
+            setError(getLocationErrorMessage(err));
+            setMechanics([]);
         } finally {
             setLoading(false);
         }

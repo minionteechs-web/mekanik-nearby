@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getCurrentLocation, LocationError } from './geo';
+import * as Location from 'expo-location';
+import { getCurrentLocation, LocationError, ensureLocationReady } from './geo';
 
 const CACHE_KEY = 'mekanik_user_location';
 const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
@@ -112,4 +113,33 @@ export const refreshUserLocation = async () => {
 export const getLocationErrorMessage = (err) => {
     if (err instanceof LocationError) return err.message;
     return 'Could not determine your location. Enable GPS and try again.';
+};
+
+export const watchUserLocation = async (onUpdate) => {
+    try {
+        await ensureLocationReady();
+    } catch {
+        return () => {};
+    }
+
+    const subscription = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.High, distanceInterval: 15 },
+        async (loc) => {
+            let label = 'Your current position (GPS)';
+            try {
+                label = await reverseGeocode(loc.coords.latitude, loc.coords.longitude);
+            } catch {
+                /* offline */
+            }
+            onUpdate({
+                lat: loc.coords.latitude,
+                lng: loc.coords.longitude,
+                accuracy: loc.coords.accuracy,
+                label,
+                source: 'gps',
+            });
+        }
+    );
+
+    return () => subscription.remove();
 };

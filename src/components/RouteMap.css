@@ -43,3 +43,8 @@
     background: #FF6B35;
     font-size: 13px;
 }
+
+.route-pin.user {
+    background: #3B82F6;
+    font-size: 16px;
+}

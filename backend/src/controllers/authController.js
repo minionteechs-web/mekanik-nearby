@@ -219,6 +219,99 @@ exports.toggle2FA = async (req, res) => {
     }
 };
 
+// @desc    Get current user profile
+// @route   GET /api/auth/me
+// @access  Private
+exports.getMe = async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT id, username, email, phone, role, is_2fa_enabled, created_at FROM users WHERE id = $1',
+            [req.user.id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json({ user: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Update current user profile
+// @route   PUT /api/auth/me
+// @access  Private
+exports.updateMe = async (req, res) => {
+    const { username, phone } = req.body;
+
+    try {
+        const current = await db.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+        if (current.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const nextUsername = username?.trim() || current.rows[0].username;
+        const nextPhone = phone !== undefined ? (phone?.trim() || null) : current.rows[0].phone;
+
+        if (nextUsername.length < 2) {
+            return res.status(400).json({ message: 'Username must be at least 2 characters' });
+        }
+
+        const duplicate = await db.query(
+            'SELECT id FROM users WHERE username = $1 AND id != $2',
+            [nextUsername, req.user.id]
+        );
+        if (duplicate.rows.length > 0) {
+            return res.status(400).json({ message: 'Username already taken' });
+        }
+
+        const updated = await db.query(
+            'UPDATE users SET username = $1, phone = $2 WHERE id = $3 RETURNING id, username, email, phone, role, is_2fa_enabled',
+            [nextUsername, nextPhone, req.user.id]
+        );
+
+        res.json({ user: updated.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Change password (logged in)
+// @route   PUT /api/auth/change-password
+// @access  Private
+exports.changePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Current and new password are required' });
+    }
+    if (newPassword.length < 6) {
+        return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    try {
+        const result = await db.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(newPassword, salt);
+        await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, req.user.id]);
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 // @desc    Request password reset
 // @route   POST /api/auth/forgot-password
 // @access  Public

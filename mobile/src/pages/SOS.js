@@ -12,6 +12,7 @@ import { formatDistance } from '../utils/format';
 import { openDirections, openGoogleMaps } from '../utils/maps';
 import { t } from '../utils/i18n';
 import { mechanicFromRequest } from '../utils/requestHelpers';
+import { getNearestOfflineMechanic } from '../utils/offlineMechanics';
 
 export const SOS = ({ navigation, route }) => {
     const [status, setStatus] = useState('idle');
@@ -128,8 +129,24 @@ export const SOS = ({ navigation, route }) => {
             setStatus('found');
         } catch (err) {
             console.error(err);
+            try {
+                const coords = await getCurrentLocation();
+                const offlineNearest = await getNearestOfflineMechanic(coords.latitude, coords.longitude);
+                if (offlineNearest) {
+                    setUserLocation(coords);
+                    setNearest(offlineNearest);
+                    setStatus('found');
+                    Alert.alert(
+                        'Offline help',
+                        'No signal — showing nearest mechanic from your saved route. Call them directly; SOS request needs network.'
+                    );
+                    return;
+                }
+            } catch {
+                /* no GPS either */
+            }
             setStatus('idle');
-            Alert.alert('SOS Failed', 'Could not get your location or reach the server.');
+            Alert.alert('SOS Failed', 'Could not get location or find cached mechanics. Save a route before travelling.');
         }
     };
 

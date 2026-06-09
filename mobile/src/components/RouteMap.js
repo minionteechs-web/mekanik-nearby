@@ -12,7 +12,7 @@ if (Platform.OS !== 'web') {
     PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
 }
 
-export function RouteMap({ path = [], start, end, mechanics = [], height = 260 }) {
+export function RouteMap({ path = [], start, end, mechanics = [], userLocation = null, height = 260 }) {
     const mapRef = useRef(null);
 
     const coordinates = useMemo(
@@ -21,12 +21,17 @@ export function RouteMap({ path = [], start, end, mechanics = [], height = 260 }
     );
 
     useEffect(() => {
-        if (!mapRef.current || coordinates.length < 2) return;
-        mapRef.current.fitToCoordinates(coordinates, {
+        if (!mapRef.current) return;
+        const fit = [...coordinates];
+        if (userLocation?.lat != null) {
+            fit.push({ latitude: userLocation.lat, longitude: userLocation.lng });
+        }
+        if (fit.length < 2) return;
+        mapRef.current.fitToCoordinates(fit, {
             edgePadding: { top: 50, right: 40, bottom: 50, left: 40 },
             animated: true,
         });
-    }, [coordinates]);
+    }, [coordinates, userLocation]);
 
     if (Platform.OS === 'web' || !MapView) {
         return (
@@ -51,9 +56,17 @@ export function RouteMap({ path = [], start, end, mechanics = [], height = 260 }
                 provider={PROVIDER_GOOGLE}
                 style={styles.map}
                 initialRegion={initialRegion}
-                showsUserLocation
+                showsUserLocation={!userLocation}
                 showsCompass
             >
+                {userLocation?.lat != null && (
+                    <Marker
+                        coordinate={{ latitude: userLocation.lat, longitude: userLocation.lng }}
+                        title="You are here"
+                        description={userLocation.label || 'Breakdown location'}
+                        pinColor="#3B82F6"
+                    />
+                )}
                 {coordinates.length > 1 && (
                     <Polyline
                         coordinates={coordinates}

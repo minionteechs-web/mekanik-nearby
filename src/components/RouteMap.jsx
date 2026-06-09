@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
 import L from 'leaflet';
 import { MAP_TILES } from '../constants/mapConfig';
@@ -12,13 +12,15 @@ const pinIcon = (color, label) =>
         iconAnchor: [16, 16],
     });
 
-function FitRoute({ path }) {
+function FitRoute({ path, userLocation }) {
     const map = useMap();
     useEffect(() => {
-        if (path?.length > 1) {
-            map.fitBounds(L.latLngBounds(path), { padding: [40, 40], maxZoom: 12, animate: true });
+        const points = [...(path || [])];
+        if (userLocation?.lat != null) points.push([userLocation.lat, userLocation.lng]);
+        if (points.length > 1) {
+            map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 14, animate: true });
         }
-    }, [path, map]);
+    }, [path, userLocation, map]);
     return null;
 }
 
@@ -27,6 +29,7 @@ export function RouteMap({
     start,
     end,
     mechanics = [],
+    userLocation = null,
     height = 280,
     className = '',
 }) {
@@ -55,7 +58,7 @@ export function RouteMap({
                     pane="overlayPane"
                 />
 
-                <FitRoute path={path} />
+                <FitRoute path={path} userLocation={userLocation} />
 
                 {path.length > 1 && (
                     <>
@@ -91,6 +94,27 @@ export function RouteMap({
                     <Marker position={[end.lat, end.lng]} icon={pinIcon('end', 'B')}>
                         <Popup><strong>Destination</strong><br />{end.label || end.name}</Popup>
                     </Marker>
+                )}
+
+                {userLocation?.lat != null && (
+                    <>
+                        <Circle
+                            center={[userLocation.lat, userLocation.lng]}
+                            radius={userLocation.accuracy || 80}
+                            pathOptions={{
+                                color: '#3B82F6',
+                                fillColor: '#3B82F6',
+                                fillOpacity: 0.15,
+                                weight: 2,
+                            }}
+                        />
+                        <Marker position={[userLocation.lat, userLocation.lng]} icon={pinIcon('user', '●')}>
+                            <Popup>
+                                <strong>You are here</strong>
+                                <br />{userLocation.label || 'Current GPS position'}
+                            </Popup>
+                        </Marker>
+                    </>
                 )}
 
                 {mechanics.map((m) =>

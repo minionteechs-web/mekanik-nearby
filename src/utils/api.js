@@ -31,6 +31,9 @@ export const auth = {
     toggle2FA: (data) => api.post('/auth/toggle-2fa', data),
     forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
     resetPassword: (data) => api.post('/auth/reset-password', data),
+    getMe: () => api.get('/auth/me'),
+    updateMe: (data) => api.put('/auth/me', data),
+    changePassword: (data) => api.put('/auth/change-password', data),
 };
 
 export const notifications = {

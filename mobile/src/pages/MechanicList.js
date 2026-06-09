@@ -6,7 +6,7 @@ import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { mechanics } from '../utils/api';
 import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
-import { getAllCachedMechanics } from '../utils/storage';
+import { getOfflineMechanicsNear } from '../utils/offlineMechanics';
 import { formatDistance } from '../utils/format';
 import { ScreenLayout } from '../components/ScreenLayout';
 
@@ -28,16 +28,23 @@ export const MechanicList = ({ navigation }) => {
         setError('');
         try {
             const location = await refreshUserLocation();
-            const response = await mechanics.getNearby(location.lat, location.lng, 100000);
-            setData(response.data);
+            try {
+                const response = await mechanics.getNearby(location.lat, location.lng, 100000);
+                setData(response.data);
+            } catch (apiErr) {
+                const offline = await getOfflineMechanicsNear(location.lat, location.lng);
+                if (offline.length) {
+                    setData(offline);
+                    setFromCache(true);
+                    setError('No signal — cached route mechanics near your GPS.');
+                } else {
+                    throw apiErr;
+                }
+            }
         } catch (err) {
             console.error(err);
-            const cached = await getAllCachedMechanics();
-            if (cached.length) {
-                setData(cached);
-                setFromCache(true);
-            }
             setError(getLocationErrorMessage(err));
+            setData([]);
         } finally {
             setLoading(false);
         }

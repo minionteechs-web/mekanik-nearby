@@ -8,6 +8,7 @@ import { mechanics, initSocket } from '../utils/api';
 import { t } from '../utils/i18n';
 import { getGreeting, formatDistance } from '../utils/format';
 import { ScreenLayout } from '../components/ScreenLayout';
+import { ProfileAvatar } from '../components/ProfileAvatar';
 import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
 import { openLocationSettings } from '../utils/geo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -140,12 +141,19 @@ export const Home = ({ navigation }) => {
                                 </TouchableOpacity>
                             ) : null}
                         </View>
-                        {!loading && !locationError && nearbyMechanics.length > 0 && (
-                            <View style={styles.nearbyChip}>
-                                <MapPin size={12} color={COLORS.brand} />
-                                <Text style={styles.nearbyChipText}>{nearbyMechanics.length} nearby</Text>
-                            </View>
-                        )}
+                        <View style={styles.headerActions}>
+                            {!loading && !locationError && nearbyMechanics.length > 0 && (
+                                <View style={styles.nearbyChip}>
+                                    <MapPin size={12} color={COLORS.brand} />
+                                    <Text style={styles.nearbyChipText}>{nearbyMechanics.length} nearby</Text>
+                                </View>
+                            )}
+                            <ProfileAvatar
+                                name={user?.username || 'Driver'}
+                                size={40}
+                                onPress={() => navigation.navigate('Profile')}
+                            />
+                        </View>
                     </SafeAreaView>
                 </View>
 
@@ -236,6 +244,7 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.pill,
     },
     nearbyChipText: { color: COLORS.brand, fontSize: 11, fontWeight: '700' },
+    headerActions: { alignItems: 'flex-end', gap: 8 },
     sheet: {
         backgroundColor: COLORS.bgCard,
         borderTopLeftRadius: RADIUS.xl,

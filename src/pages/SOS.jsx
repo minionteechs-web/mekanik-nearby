@@ -11,6 +11,7 @@ import { mechanics as mechanicsApi, requests as requestsApi, initSocket } from '
 import { formatDistance } from '../utils/format';
 import { openGoogleMaps, openDirections } from '../utils/maps';
 import { mechanicFromRequest } from '../utils/requestHelpers';
+import { getNearestOfflineMechanic } from '../utils/offlineMechanics';
 import './SOS.css';
 
 export function SOS() {
@@ -139,14 +140,14 @@ export function SOS() {
 
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setUserPosition([latitude, longitude]);
                 try {
-                    const { latitude, longitude } = pos.coords;
-                    setUserPosition([latitude, longitude]);
                     const response = await mechanicsApi.getNearby(latitude, longitude, 50);
-                    const mechanics = response.data;
+                    const list = response.data;
 
-                    if (mechanics?.length > 0) {
-                        setNearest(mechanics[0]);
+                    if (list?.length > 0) {
+                        setNearest(list[0]);
                         setStatus('found');
                     } else {
                         setError('No mechanics available within 50 km. Try again shortly.');
@@ -154,8 +155,15 @@ export function SOS() {
                     }
                 } catch (err) {
                     console.error('SOS Error:', err);
-                    setError('Could not reach servers. Check your connection.');
-                    setStatus('idle');
+                    const offlineNearest = await getNearestOfflineMechanic(latitude, longitude);
+                    if (offlineNearest) {
+                        setNearest(offlineNearest);
+                        setStatus('found');
+                        setError('Offline mode — tap the mechanic to call. SOS request needs mobile signal.');
+                    } else {
+                        setError('No signal and no saved route mechanics nearby. Save a route before travelling.');
+                        setStatus('idle');
+                    }
                 }
             },
             () => {

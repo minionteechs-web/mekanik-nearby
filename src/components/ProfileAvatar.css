@@ -1,0 +1,42 @@
+.profile-avatar-circle {
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+    line-height: 1;
+    user-select: none;
+}
+
+button.profile-avatar-circle {
+    cursor: pointer;
+    padding: 0;
+    background-clip: padding-box;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button.profile-avatar-circle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.profile-avatar-circle.active {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.35);
+}
+
+.profile-avatar-circle.large {
+    width: 96px !important;
+    height: 96px !important;
+    font-size: 2rem !important;
+    border-width: 3px;
+}
+
+.profile-avatar-circle.header {
+    pointer-events: auto;
+}

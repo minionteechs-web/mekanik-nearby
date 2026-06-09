@@ -5,8 +5,10 @@ import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { auth } from '../utils/api';
+import { useAuth } from '../utils/authContext';
 
 export const TwoFactorSetup = ({ navigation }) => {
+    const { updateUser } = useAuth();
     const [loading, setLoading] = useState(true);
     const [verifying, setVerifying] = useState(false);
     const [qrCode, setQrCode] = useState(null);
@@ -39,6 +41,7 @@ export const TwoFactorSetup = ({ navigation }) => {
         setVerifying(true);
         try {
             await auth.toggle2FA({ enable: true, code });
+            await updateUser({ is_2fa_enabled: true });
             Alert.alert("Success", "Two-Factor Authentication is now enabled!", [
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);

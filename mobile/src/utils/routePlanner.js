@@ -6,6 +6,18 @@ import { saveRouteOffline } from './storage';
 
 const ROUTE_RADIUS_METERS = 80000;
 
+const sampleAlongPath = (path, count = 6) => {
+    if (!path?.length) return [];
+    if (path.length <= count) return path.map(([lat, lng]) => ({ lat, lng }));
+    const samples = [];
+    for (let i = 0; i < count; i++) {
+        const idx = Math.round((i / (count - 1)) * (path.length - 1));
+        const [lat, lng] = path[idx];
+        samples.push({ lat, lng });
+    }
+    return samples;
+};
+
 const dedupeMechanics = (lists) => {
     const map = new Map();
     lists.flat().forEach((m) => { if (m?.id) map.set(m.id, m); });
@@ -20,14 +32,10 @@ export async function downloadRouteMechanics(startName, endName) {
         throw new Error('Could not find locations. Try Lagos, Ibadan, Abuja, etc.');
     }
 
-    const mid = midpoint(start, end);
     const geometry = await fetchRouteGeometry(start, end);
+    const mid = midpoint(start, end);
 
-    const points = [
-        { lat: start.lat, lng: start.lng },
-        { lat: mid.lat, lng: mid.lng },
-        { lat: end.lat, lng: end.lng },
-    ];
+    const points = sampleAlongPath(geometry.path, 6);
 
     const results = await Promise.allSettled(
         points.map((p) => mechanics.getNearby(p.lat, p.lng, ROUTE_RADIUS_METERS))

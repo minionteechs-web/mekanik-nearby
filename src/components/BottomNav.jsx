@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Search, ShieldAlert, ClipboardList, User, Wrench } from 'lucide-react';
+import { Home, Search, ShieldAlert, ClipboardList, Wrench } from 'lucide-react';
+import { ProfileAvatar } from './ProfileAvatar';
 import './BottomNav.css';
 
 export function BottomNav() {
@@ -16,8 +17,8 @@ export function BottomNav() {
                     <Wrench size={22} />
                     <span>Jobs</span>
                 </NavLink>
-                <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <User size={22} />
+                <NavLink to="/profile" className={({ isActive }) => `nav-item nav-profile ${isActive ? 'active' : ''}`}>
+                    <ProfileAvatar name={user.username} size={28} active={false} />
                     <span>Profile</span>
                 </NavLink>
             </nav>
@@ -41,8 +42,8 @@ export function BottomNav() {
                 <ClipboardList size={22} />
                 <span>Activity</span>
             </NavLink>
-            <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                <User size={22} />
+            <NavLink to="/profile" className={({ isActive }) => `nav-item nav-profile ${isActive ? 'active' : ''}`}>
+                <ProfileAvatar name={user.username} size={28} active={false} />
                 <span>Profile</span>
             </NavLink>
         </nav>

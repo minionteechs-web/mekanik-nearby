@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wrench, MapPin, ChevronUp, Navigation } from 'lucide-react';
+import { ProfileAvatar } from '../components/ProfileAvatar';
 import { MapComponent } from '../components/MapComponent';
 import { MechanicCard } from '../components/MechanicCard';
 import { mechanics as mechanicsApi, initSocket } from '../utils/api';
@@ -82,7 +83,7 @@ export function Home() {
                     onMarkerClick={(mech) => navigate(`/mechanic/${mech.id}`)}
                 />
                 <div className="map-overlay-header">
-                    <div>
+                    <div className="home-header-main">
                         <h2 className="home-greeting-text">{getGreeting(userName)}</h2>
                         <p className="home-location-line">
                             <Navigation size={13} />
@@ -93,17 +94,26 @@ export function Home() {
                             )}
                         </p>
                     </div>
-                    {!loading && !locationError && (
-                        <div className="nearby-chip">
-                            <MapPin size={14} />
-                            {nearbyMechanics.length} nearby
-                        </div>
-                    )}
-                    {locationError && (
-                        <button type="button" className="location-retry-btn" onClick={loadLocationAndMechanics}>
-                            Enable location
-                        </button>
-                    )}
+                    <div className="home-header-actions">
+                        {!loading && !locationError && (
+                            <div className="nearby-chip">
+                                <MapPin size={14} />
+                                {nearbyMechanics.length} nearby
+                            </div>
+                        )}
+                        {locationError && (
+                            <button type="button" className="location-retry-btn" onClick={loadLocationAndMechanics}>
+                                Enable location
+                            </button>
+                        )}
+                        <ProfileAvatar
+                            name={userName}
+                            size={42}
+                            className="header"
+                            onClick={() => navigate('/profile')}
+                            title="Profile & settings"
+                        />
+                    </div>
                 </div>
             </div>
 

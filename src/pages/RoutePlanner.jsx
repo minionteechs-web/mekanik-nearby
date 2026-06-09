@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Download, Map as MapIcon, Navigation, Clock, Ruler, ExternalLink } from 'lucide-react';
 import { Button } from '../components/Button';
@@ -10,7 +10,9 @@ import { RouteInsights } from '../components/RouteInsights';
 import { useToast } from '../components/Toast';
 import { downloadRouteMechanics } from '../utils/routePlanner';
 import { planRoute } from '../utils/routeGeometry';
-import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
+import { refreshUserLocation, getLocationErrorMessage, watchUserLocation } from '../utils/location';
+import { rankMechanicsByGps } from '../utils/offlineMechanics';
+import { formatDistance } from '../utils/format';
 import { getSavedRoute, listSavedRoutes } from '../utils/routeStorage';
 import { openRouteInGoogleMaps } from '../utils/maps';
 import './MechanicList.css';
@@ -58,6 +60,14 @@ export function RoutePlanner() {
         loadSaved();
     }, [searchParams]);
 
+    useEffect(() => {
+        if (!result?.route) return undefined;
+        return watchUserLocation((loc) => {
+            setUserLocation(loc);
+            setLocationError('');
+        });
+    }, [result?.id]);
+
     const handlePreview = async () => {
         if (!start.trim() || !end.trim()) {
             setError('Enter both start and destination');
@@ -100,7 +110,18 @@ export function RoutePlanner() {
     };
 
     const activeRoute = result?.route || preview;
-    const mapMechanics = result?.mechanics || [];
+
+    const mapMechanics = useMemo(() => {
+        if (result?.mechanics?.length && userLocation?.lat != null) {
+            return rankMechanicsByGps(result.mechanics, userLocation.lat, userLocation.lng);
+        }
+        return result?.mechanics || [];
+    }, [result, userLocation]);
+
+    const nearestOffline = useMemo(
+        () => (mapMechanics.length ? mapMechanics.slice(0, 3) : []),
+        [mapMechanics]
+    );
 
     const handleOpenGoogleMaps = () => {
         if (!activeRoute?.start?.lat || !activeRoute?.end?.lat) return;
@@ -184,11 +205,19 @@ export function RoutePlanner() {
                         </div>
                     </div>
 
+                    {result && userLocation && (
+                        <p className="route-breakdown-banner">
+                            <Navigation size={14} />
+                            You are here on your saved route — blue dot updates via GPS even offline.
+                        </p>
+                    )}
+
                     <RouteMap
                         path={activeRoute.path}
                         start={activeRoute.start}
                         end={activeRoute.end}
                         mechanics={mapMechanics}
+                        userLocation={result ? userLocation : null}
                         height={300}
                     />
 
@@ -207,14 +236,32 @@ export function RoutePlanner() {
                         gainM={activeRoute.elevation?.gainM}
                     />
 
+                    {result && nearestOffline.length > 0 && userLocation && (
+                        <div className="route-nearby-offline">
+                            <h4>Nearest cached mechanics to you now</h4>
+                            <ul>
+                                {nearestOffline.map((m) => (
+                                    <li key={m.id}>
+                                        <button type="button" onClick={() => navigate(`/mechanic/${m.id}`)}>
+                                            <strong>{m.name}</strong> — {formatDistance(m.distance_meters)}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
                     {result ? (
                         <div className="route-result-footer">
                             <p>
                                 <strong>{result.count}</strong> mechanics cached along this corridor.
-                                Find them in <em>Find Mechanics</em> even without signal.
+                                Directions, elevation, and rest stops are saved on your device.
                             </p>
                             <Button variant="secondary" onClick={() => navigate('/mechanics')}>
-                                Browse cached mechanics
+                                Browse all cached mechanics
+                            </Button>
+                            <Button variant="secondary" onClick={() => navigate('/sos')}>
+                                Emergency SOS
                             </Button>
                         </div>
                     ) : (

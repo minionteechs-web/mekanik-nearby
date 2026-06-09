@@ -1,10 +1,22 @@
 import { mechanics as mechanicsApi } from './api';
-import { geocodePlace, midpoint } from './geocode';
+import { geocodePlace, midpoint } from './geocode'; // midpoint kept for route.midpoint in payload
 import { fetchRouteGeometry } from './routeGeometry';
 import { enrichRouteInsights } from './routeInsights';
 import { saveRoute } from './routeStorage';
 
 const ROUTE_RADIUS_KM = 80;
+
+const sampleAlongPath = (path, count = 6) => {
+    if (!path?.length) return [];
+    if (path.length <= count) return path.map(([lat, lng]) => ({ lat, lng }));
+    const samples = [];
+    for (let i = 0; i < count; i++) {
+        const idx = Math.round((i / (count - 1)) * (path.length - 1));
+        const [lat, lng] = path[idx];
+        samples.push({ lat, lng });
+    }
+    return samples;
+};
 
 const dedupeMechanics = (lists) => {
     const map = new Map();
@@ -20,14 +32,10 @@ export async function downloadRouteMechanics(startName, endName) {
         throw new Error('Could not find one or both locations. Try major city names like Lagos, Ibadan, Abuja.');
     }
 
-    const mid = midpoint(start, end);
     const geometry = await fetchRouteGeometry(start, end);
+    const mid = midpoint(start, end);
 
-    const points = [
-        { lat: start.lat, lng: start.lng },
-        { lat: mid.lat, lng: mid.lng },
-        { lat: end.lat, lng: end.lng },
-    ];
+    const points = sampleAlongPath(geometry.path, 6);
 
     const results = await Promise.allSettled(
         points.map((p) => mechanicsApi.getNearby(p.lat, p.lng, ROUTE_RADIUS_KM))

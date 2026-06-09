@@ -37,6 +37,10 @@
     min-width: 52px;
 }
 
+.nav-profile .profile-avatar-circle {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 .nav-item.active {
     color: var(--color-brand);
 }
