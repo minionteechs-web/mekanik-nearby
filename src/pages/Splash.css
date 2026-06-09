@@ -1,0 +1,120 @@
+.splash-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: var(--color-bg-dark);
+}
+
+.splash-animation-container {
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.splash-car-wrapper {
+    margin-bottom: 0.5rem;
+    animation: carSlideIn 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.splash-tools-wrapper {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.icon-car {
+    color: var(--color-brand);
+}
+
+.icon-gear {
+    color: var(--color-brand);
+    opacity: 0.8;
+    animation: gearSpin 3s linear infinite;
+}
+
+.icon-wrench {
+    color: var(--color-brand);
+    opacity: 0.8;
+    animation: wrenchRock 1s ease-in-out infinite alternate;
+}
+
+.splash-content {
+    text-align: center;
+    animation: fadeIn 1s ease-out;
+}
+
+.splash-logo {
+    font-size: 3rem;
+    color: var(--color-brand);
+    margin-bottom: 0.5rem;
+    font-weight: 800;
+}
+
+.splash-tagline {
+    font-family: var(--font-body);
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+}
+
+.splash-loader {
+    margin-top: 2.5rem;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 107, 53, 0.2);
+    border-top-color: var(--color-brand);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes carSlideIn {
+    from {
+        transform: translateX(-100px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes gearSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes wrenchRock {
+    from {
+        transform: rotate(-15deg);
+    }
+
+    to {
+        transform: rotate(45deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

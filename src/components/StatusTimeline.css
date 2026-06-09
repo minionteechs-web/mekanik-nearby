@@ -1,0 +1,40 @@
+.status-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    text-align: left;
+}
+
+.timeline-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0;
+    position: relative;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+.timeline-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 2rem;
+    width: 2px;
+    height: calc(100% - 0.5rem);
+    background: var(--color-border);
+}
+
+.timeline-step.done { color: var(--color-success); }
+.timeline-step.done::after { background: rgba(16, 185, 129, 0.3); }
+.timeline-step.active { color: var(--color-brand); font-weight: 600; }
+
+.timeline-dot {
+    width: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 1;
+}

@@ -1,0 +1,176 @@
+.map-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.leaflet-map-element {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background: #0f1419;
+}
+
+.leaflet-custom-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* User location — pulsing blue dot */
+.map-user-marker {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+.map-user-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    background: #3B82F6;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+    z-index: 2;
+}
+
+.map-user-pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.25);
+    animation: map-pulse 2s ease-out infinite;
+}
+
+/* Mechanic pin */
+.map-mechanic-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.map-mechanic-marker .map-mechanic-label,
+.map-mechanic-marker svg {
+    display: none;
+}
+
+.map-mechanic-marker::before {
+    content: '';
+    width: 36px;
+    height: 36px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 3px solid #fff;
+}
+
+.map-mechanic-marker.online::before {
+    background: linear-gradient(135deg, #FF6B35, #E55A26);
+}
+
+.map-mechanic-marker.offline::before {
+    background: #6B7280;
+}
+
+.map-mechanic-marker::after {
+    content: '🔧';
+    position: absolute;
+    top: 6px;
+    font-size: 14px;
+    transform: rotate(0deg);
+}
+
+/* Live tracking mechanic */
+.map-tracking-mechanic {
+    position: relative;
+    font-size: 22px;
+    text-align: center;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+}
+
+.map-tracking-pulse {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid var(--color-brand, #FF6B35);
+    animation: map-pulse 1.5s ease-out infinite;
+}
+
+.map-popup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    min-width: 140px;
+}
+
+.map-popup strong {
+    font-size: 0.95rem;
+    color: #111;
+}
+
+.map-popup .online { color: #10B981; font-weight: 600; }
+.map-popup .offline { color: #6B7280; }
+
+.map-locate-btn {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--color-bg-elevated, #222);
+    border: 1px solid var(--color-border, #333);
+    color: var(--color-brand, #FF6B35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s ease;
+}
+
+.map-locate-btn:hover {
+    transform: scale(1.05);
+}
+
+.map-attribution-badge {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    z-index: 1000;
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.45);
+    background: rgba(0, 0, 0, 0.45);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-pill, 9999px);
+    pointer-events: none;
+}
+
+@keyframes map-pulse {
+    0% { transform: scale(0.6); opacity: 0.8; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Leaflet controls — dark theme native */
+.leaflet-control-zoom {
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+}
+
+.leaflet-control-zoom a {
+    background: #222 !important;
+    color: #fff !important;
+    border-color: #333 !important;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
+}

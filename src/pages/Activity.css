@@ -1,0 +1,80 @@
+.activity-page {
+    padding: 1.5rem;
+    min-height: 100vh;
+}
+
+.activity-header h1 {
+    font-size: 1.5rem;
+    color: var(--color-brand);
+    margin-bottom: 0.25rem;
+}
+
+.activity-header p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.activity-item {
+    width: 100%;
+    text-align: left;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: border-color var(--motion-fast);
+    color: inherit;
+}
+
+.activity-item:hover {
+    border-color: rgba(255, 107, 53, 0.3);
+}
+
+.activity-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.activity-status {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-pill);
+}
+
+.activity-status.pending { background: rgba(255, 107, 53, 0.12); color: var(--color-brand); }
+.activity-status.active { background: rgba(59, 130, 246, 0.12); color: var(--color-trust); }
+.activity-status.done { background: rgba(16, 185, 129, 0.12); color: var(--color-success); }
+.activity-status.cancelled { background: rgba(107, 114, 128, 0.12); color: var(--color-text-muted); }
+
+.activity-date {
+    font-size: 0.75rem;
+    color: var(--color-text-subtle);
+}
+
+.activity-title {
+    font-weight: 600;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.activity-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-brand);
+    font-weight: 600;
+}

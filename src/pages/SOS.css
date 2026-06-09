@@ -1,0 +1,301 @@
+.sos-container {
+    min-height: 100vh;
+    padding: 1.25rem 1.5rem calc(6rem + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-dark);
+    transition: background 0.4s ease;
+}
+
+.sos-container.active {
+    background: linear-gradient(180deg, #1a0808 0%, var(--color-bg-dark) 40%);
+}
+
+.sos-header {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.icon-btn-back {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-main);
+    cursor: pointer;
+}
+
+.sos-error-toast {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: var(--color-danger);
+}
+
+.sos-error-toast button {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.sos-idle-state,
+.sos-locating-state,
+.sos-found-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.sos-hero-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-danger);
+    background: rgba(239, 68, 68, 0.12);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-pill);
+    margin-bottom: 1rem;
+}
+
+.sos-idle-state h2 {
+    font-size: 2rem;
+    color: var(--color-text-main);
+    margin-bottom: 0.75rem;
+}
+
+.sos-idle-state p {
+    color: var(--color-text-muted);
+    max-width: 300px;
+    margin-bottom: 3rem;
+    line-height: 1.6;
+}
+
+.sos-big-btn {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #EF4444 0%, #991B1B 100%);
+    border: none;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    box-shadow: 0 0 60px rgba(239, 68, 68, 0.45);
+    transition: transform 0.15s ease;
+}
+
+.sos-pulse-ring {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    animation: sos-ring 2s ease-out infinite;
+}
+
+.sos-big-btn:active { transform: scale(0.96); }
+
+.sos-big-btn span:last-child {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+}
+
+.sos-disclaimer {
+    margin-top: 2rem;
+    font-size: 0.75rem;
+    color: var(--color-text-subtle);
+}
+
+@keyframes sos-ring {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.25); opacity: 0; }
+}
+
+.radar-animation {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--color-danger);
+    animation: pulse 1.5s infinite;
+    margin-bottom: 2rem;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.5); opacity: 0.8; }
+    100% { transform: scale(3); opacity: 0; }
+}
+
+.success-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.15);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    color: var(--color-brand);
+}
+
+.sos-mech-wrap {
+    width: 100%;
+    margin: 1.5rem 0;
+}
+
+.sos-actions {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 360px;
+}
+
+.sos-tracking .tracking-pulse {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-brand);
+    margin-bottom: 1rem;
+    animation: pulse 1.5s infinite;
+}
+
+.sos-tracking .tracking-pulse.accepted,
+.sos-tracking .tracking-pulse.en-route {
+    background: var(--color-trust);
+}
+
+.sos-tracking .tracking-pulse.arrived {
+    background: var(--color-success);
+    animation: none;
+}
+
+.sos-timeline-card {
+    width: 100%;
+    max-width: 360px;
+    margin: 1.5rem 0;
+    padding: 1.25rem;
+}
+
+.sos-mech-name {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+}
+
+.sos-tracking-actions {
+    flex-wrap: wrap;
+}
+
+.sos-cancel-link {
+    margin-top: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/* Map-integrated SOS */
+.sos-container.has-map {
+    padding: 0;
+    min-height: 100vh;
+}
+
+.sos-found-state.sos-with-map,
+.sos-found-state {
+    flex: 1;
+    width: 100%;
+    padding: 0;
+}
+
+.sos-found-map {
+    height: 42vh;
+    min-height: 240px;
+    width: 100%;
+}
+
+.sos-found-panel {
+    padding: 1.25rem 1.5rem 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sos-found-panel .mechanic-card-v2 {
+    width: 100%;
+    text-align: left;
+}
+
+.sos-tracking-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+}
+
+.sos-tracking-map {
+    flex: 1;
+    min-height: 45vh;
+    position: relative;
+}
+
+.sos-map-close {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(15, 15, 15, 0.85);
+    border: 1px solid var(--color-border);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.sos-tracking-panel {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-top: 1px solid var(--color-border);
+    padding: 1.25rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
+    text-align: center;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.sos-tracking-panel h2 {
+    font-size: 1.25rem;
+    margin: 0.5rem 0 0.25rem;
+}
+
+.sos-tracking-panel > p {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+}

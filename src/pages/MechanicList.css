@@ -1,0 +1,194 @@
+.list-container {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    gap: 1.25rem;
+}
+
+.list-container-nav {
+    padding-bottom: 1rem;
+}
+
+.list-header-static h2 {
+    font-size: 1.5rem;
+    color: var(--color-brand);
+    margin: 0;
+}
+
+.list-subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin: 0.25rem 0 0;
+}
+
+.list-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.icon-btn-back {
+    background: transparent;
+    border: none;
+    color: var(--color-text-main);
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-left: -0.5rem;
+}
+
+.list-header h2 {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.list-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--radius-md);
+    border: 1px solid #333;
+    background: #2A2A2A;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.filter-toggle.active {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.search-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background-color: #2A2A2A;
+    border-radius: var(--radius-md);
+    padding: 0 1rem;
+    border: 1px solid #333;
+}
+
+.search-icon {
+    color: var(--color-text-muted);
+}
+
+.search-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 0.75rem;
+    font-family: var(--font-body);
+}
+
+.search-bar input:focus {
+    outline: none;
+}
+
+.filter-btn {
+    background-color: #2A2A2A;
+    border: 1px solid #333;
+    color: white;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.mechanics-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 2rem;
+    margin: 0 -0.5rem;
+    padding: 0.5rem;
+}
+
+.mechanic-card {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mech-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mech-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--color-brand);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-family: var(--font-heading);
+    font-weight: bold;
+}
+
+.mech-info {
+    flex: 1;
+}
+
+.mech-info h3 {
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem 0;
+}
+
+.mech-specialty {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.mech-status {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: auto;
+    align-self: flex-start;
+    margin-top: 5px;
+}
+
+.mech-status.online {
+    background-color: var(--color-success);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.mech-status.offline {
+    background-color: #666;
+}
+
+.mech-card-footer {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #333;
+    padding-top: 0.75rem;
+}
+
+.mech-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}

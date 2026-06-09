@@ -1,0 +1,157 @@
+.home-map-layout {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.home-map-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.home-map-layer .map-container-placeholder,
+.home-map-layer > div {
+    height: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+}
+
+.map-overlay-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: linear-gradient(180deg, rgba(15, 15, 15, 0.9) 0%, transparent 100%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.home-greeting-text {
+    font-size: 1.35rem;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.home-subtext {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin: 0.15rem 0 0;
+}
+
+.nearby-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(255, 107, 53, 0.15);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    color: var(--color-brand);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-pill);
+    pointer-events: auto;
+}
+
+.home-bottom-sheet {
+    position: absolute;
+    bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    background: var(--color-bg-card);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+    z-index: 20;
+    max-height: 38vh;
+    transition: max-height 0.35s ease;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.home-bottom-sheet.expanded {
+    max-height: 65vh;
+}
+
+.sheet-handle {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+}
+
+.sheet-grabber {
+    width: 40px;
+    height: 4px;
+    background: var(--color-border);
+    border-radius: var(--radius-pill);
+}
+
+.sheet-handle .rotated {
+    transform: rotate(180deg);
+}
+
+.sheet-content {
+    padding: 0 1.25rem 1.25rem;
+    overflow-y: auto;
+    max-height: calc(65vh - 3rem);
+}
+
+.sheet-quick-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.quick-pill {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 107, 53, 0.12);
+    border: 1px solid rgba(255, 107, 53, 0.25);
+    color: var(--color-brand);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--motion-fast);
+}
+
+.quick-pill.secondary {
+    background: var(--color-bg-input);
+    border-color: var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.sheet-title {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin: 0 0 0.75rem;
+    font-weight: 600;
+}
+
+.sheet-mechanics {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sheet-loading,
+.sheet-empty {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    padding: 1rem 0;
+}

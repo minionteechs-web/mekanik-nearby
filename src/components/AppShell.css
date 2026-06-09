@@ -1,0 +1,14 @@
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-shell-content {
+    flex: 1;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
+.app-shell.no-nav .app-shell-content {
+    padding-bottom: 0;
+}
