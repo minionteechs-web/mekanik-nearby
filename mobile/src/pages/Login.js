@@ -14,17 +14,21 @@ const createStyles = (colors) => ({
         flex: 1,
         backgroundColor: colors.bgDark,
     },
+    themeCorner: {
+        position: 'absolute',
+        top: SPACING.md,
+        right: SPACING.md,
+        zIndex: 2,
+    },
     scroll: {
         flexGrow: 1,
         padding: SPACING.xl,
+        paddingTop: SPACING.xxl + SPACING.lg,
         justifyContent: 'center',
     },
-    brandRow: {
-        flexDirection: 'row',
+    intro: {
         alignItems: 'center',
-        justifyContent: 'space-between',
         marginBottom: SPACING.xl,
-        gap: SPACING.md,
     },
     backBtn: { marginBottom: 20 },
     backBtnText: { color: colors.brand, fontWeight: '600' },
@@ -33,11 +37,13 @@ const createStyles = (colors) => ({
         fontWeight: '800',
         color: colors.textMain,
         marginBottom: 8,
+        textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
         color: colors.textMuted,
         marginBottom: 32,
+        textAlign: 'center',
     },
     loginBtn: { marginTop: 20 },
     otpInput: {
@@ -171,14 +177,11 @@ export const Login = ({ navigation }) => {
 
         return (
             <>
-                <View style={styles.brandRow}>
-                    <BrandLogo size={56} compact showWordmark={false} />
-                    <View style={{ flex: 1 }}>
-                        <ThemeToggle />
-                    </View>
+                <View style={styles.intro}>
+                    <BrandLogo size={72} />
+                    <Text style={styles.title}>Welcome Back</Text>
+                    <Text style={styles.subtitle}>Sign in to continue to Mekanik Nearby</Text>
                 </View>
-                <Text style={styles.title}>Welcome Back</Text>
-                <Text style={styles.subtitle}>Sign in to continue to Mekanik Nearby</Text>
                 <Input label="Email" placeholder="your@email.com" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
                 <Input label="Password" placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry />
                 <TouchableOpacity onPress={() => setShowForgot(true)} style={{ alignSelf: 'flex-end', marginTop: 8 }}>
@@ -199,6 +202,9 @@ export const Login = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            <View style={styles.themeCorner}>
+                <ThemeToggle compact />
+            </View>
             <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
                 {renderBody()}
             </ScrollView>

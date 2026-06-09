@@ -143,11 +143,14 @@ export function Profile() {
 
     return (
         <div className="list-container profile-page">
-            <header className="list-header">
+            <header className="list-header profile-page-header">
                 <button className="icon-btn-back" onClick={() => navigate(-1)}>
                     <ChevronLeft size={24} />
                 </button>
                 <h2>Profile & Settings</h2>
+                <div className="page-theme-corner page-theme-corner--inline">
+                    <ThemeToggle compact />
+                </div>
             </header>
 
             <div className="profile-hero">
@@ -264,12 +267,6 @@ export function Profile() {
                     >
                         <Car size={16} /> Save breakdown details
                     </button>
-                </Card>
-
-                <h3 className="profile-section-label">Appearance</h3>
-                <Card className="profile-settings-card">
-                    <p className="profile-appearance-hint">Match your device, or choose light or dark for roadside visibility day or night.</p>
-                    <ThemeToggle />
                 </Card>
 
                 <h3 className="profile-section-label">Notifications</h3>

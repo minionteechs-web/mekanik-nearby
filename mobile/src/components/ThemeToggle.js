@@ -10,7 +10,7 @@ const OPTIONS = [
     { id: 'dark', label: 'Dark', Icon: Moon },
 ];
 
-export const ThemeToggle = () => {
+export const ThemeToggle = ({ compact = false }) => {
     const { mode, setMode, colors } = useTheme();
 
     const styles = useMemo(
@@ -18,26 +18,27 @@ export const ThemeToggle = () => {
             StyleSheet.create({
                 wrap: {
                     flexDirection: 'row',
-                    gap: 4,
-                    padding: 4,
+                    gap: compact ? 2 : 4,
+                    padding: compact ? 3 : 4,
                     backgroundColor: colors.bgElevated,
                     borderRadius: RADIUS.md,
                     borderWidth: 1,
                     borderColor: colors.border,
+                    width: compact ? 152 : undefined,
                 },
                 btn: {
                     flex: 1,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 4,
-                    paddingVertical: SPACING.sm,
+                    gap: compact ? 2 : 4,
+                    paddingVertical: compact ? 6 : SPACING.sm,
                     borderRadius: RADIUS.sm,
                 },
                 btnActive: {
                     backgroundColor: colors.bgCard,
                 },
                 label: {
-                    fontSize: 10,
+                    fontSize: compact ? 9 : 10,
                     fontWeight: '700',
                     color: colors.textMuted,
                 },

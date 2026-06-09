@@ -144,6 +144,7 @@ export const Profile = ({ navigation }) => {
             <SafeAreaView style={[styles.container, { backgroundColor: colors.bgDark }]}>
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>{t('profile')}</Text>
+                    <ThemeToggle compact />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scroll}>
@@ -206,27 +207,27 @@ export const Profile = ({ navigation }) => {
                             onChangeText={(v) => setPrefs({ ...prefs, vehicleModel: v })}
                             placeholder="Corolla"
                         />
-                        <Input
-                            label="Plate number"
-                            value={prefs.vehiclePlate || ''}
-                            onChangeText={(v) => setPrefs({ ...prefs, vehiclePlate: v })}
-                        />
-                        <Input
-                            label="Vehicle color"
-                            value={prefs.vehicleColor || ''}
-                            onChangeText={(v) => setPrefs({ ...prefs, vehicleColor: v })}
-                        />
+                        <View style={styles.fieldRow}>
+                            <View style={styles.fieldHalf}>
+                                <Input
+                                    label="Plate number"
+                                    value={prefs.vehiclePlate || ''}
+                                    onChangeText={(v) => setPrefs({ ...prefs, vehiclePlate: v })}
+                                    placeholder="ABC-123XY"
+                                />
+                            </View>
+                            <View style={styles.fieldHalf}>
+                                <Input
+                                    label="Vehicle color"
+                                    value={prefs.vehicleColor || ''}
+                                    onChangeText={(v) => setPrefs({ ...prefs, vehicleColor: v })}
+                                    placeholder="Silver"
+                                />
+                            </View>
+                        </View>
                         <Button variant="secondary" onPress={() => handleSavePrefs(prefs)}>
                             Save breakdown details
                         </Button>
-                    </Card>
-
-                    <Text style={styles.sectionTitle}>Appearance</Text>
-                    <Card style={styles.formCard}>
-                        <Text style={styles.appearanceHint}>
-                            Auto follows your phone. Light or dark helps on bright highways or night breakdowns.
-                        </Text>
-                        <ThemeToggle />
                     </Card>
 
                     <Text style={styles.sectionTitle}>Notifications</Text>
@@ -421,8 +422,24 @@ export const Profile = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.bgDark },
-    header: { flexDirection: 'row', alignItems: 'center', padding: SPACING.xl, paddingTop: 60 },
-    headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.textMain, marginLeft: SPACING.md },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: SPACING.xl,
+        paddingTop: 60,
+        gap: SPACING.md,
+    },
+    headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.textMain, flex: 1 },
+    fieldRow: {
+        flexDirection: 'row',
+        gap: SPACING.md,
+        width: '100%',
+    },
+    fieldHalf: {
+        flex: 1,
+        minWidth: 0,
+    },
     scroll: { padding: SPACING.xl, paddingTop: 0, paddingBottom: SPACING.xxl },
     userCard: { alignItems: 'center', marginBottom: SPACING.xl, marginTop: SPACING.md },
     userName: { fontSize: 22, fontWeight: '700', color: COLORS.textMain, marginTop: SPACING.md },

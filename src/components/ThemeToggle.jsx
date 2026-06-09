@@ -8,11 +8,11 @@ const OPTIONS = [
     { id: 'dark', label: 'Dark', icon: Moon },
 ];
 
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }) {
     const { mode, setMode } = useTheme();
 
     return (
-        <div className="theme-toggle" role="group" aria-label="Appearance">
+        <div className={`theme-toggle ${compact ? 'theme-toggle--compact' : ''}`} role="group" aria-label="Appearance">
             {OPTIONS.map(({ id, label, icon: Icon }) => (
                 <button
                     key={id}

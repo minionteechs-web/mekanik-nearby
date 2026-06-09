@@ -138,8 +138,8 @@ export function SOS() {
             return;
         }
 
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
                 const { latitude, longitude } = pos.coords;
                 setUserPosition([latitude, longitude]);
                 try {
@@ -148,13 +148,13 @@ export function SOS() {
 
                     if (list?.length > 0) {
                         setNearest(list[0]);
-                        setStatus('found');
-                    } else {
+                            setStatus('found');
+                        } else {
                         setError('No mechanics available within 50 km. Try again shortly.');
-                        setStatus('idle');
-                    }
-                } catch (err) {
-                    console.error('SOS Error:', err);
+                            setStatus('idle');
+                        }
+                    } catch (err) {
+                        console.error('SOS Error:', err);
                     const offlineNearest = await getNearestOfflineMechanic(latitude, longitude);
                     if (offlineNearest) {
                         setNearest(offlineNearest);
@@ -164,13 +164,13 @@ export function SOS() {
                         setError('No signal and no saved route mechanics nearby. Save a route before travelling.');
                         setStatus('idle');
                     }
-                }
-            },
+                    }
+                },
             () => {
                 setError('Enable location services to use emergency SOS.');
-                setStatus('idle');
-            }
-        );
+                    setStatus('idle');
+                }
+            );
     };
 
     const confirmRequest = () => {
@@ -179,20 +179,20 @@ export function SOS() {
 
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
-                try {
-                    const { latitude, longitude } = pos.coords;
+        try {
+                const { latitude, longitude } = pos.coords;
                     setUserPosition([latitude, longitude]);
-                    const response = await requestsApi.create({
+                const response = await requestsApi.create({
                         mechanic_id: nearest.user_id,
-                        lat: latitude,
+                    lat: latitude,
                         lng: longitude,
-                    });
-                    setActiveRequestId(response.data.id);
+                });
+                setActiveRequestId(response.data.id);
                     activeRequestIdRef.current = response.data.id;
                     setRequestStatus('pending');
                     setStatus('tracking');
                     showToast('Help request sent. Stay where you are.', 'success');
-                } catch (err) {
+        } catch (err) {
                     if (err.response?.status === 409) {
                         const existingId = err.response?.data?.requestId;
                         setError('You already have an active request. Open Activity to track it.');
@@ -248,11 +248,11 @@ export function SOS() {
     return (
         <div className={`sos-container ${isActive ? 'active' : ''} ${status === 'tracking' ? 'has-map' : ''}`}>
             {status !== 'tracking' && (
-                <header className="sos-header">
+            <header className="sos-header">
                     <button className="icon-btn-back" onClick={() => navigate(-1)} aria-label="Close">
                         <X size={24} />
-                    </button>
-                </header>
+                </button>
+            </header>
             )}
 
             {error && (
@@ -352,7 +352,7 @@ export function SOS() {
                                 </Button>
                             )}
                             {mechanicPosition && userPosition && (
-                                <Button
+                        <Button 
                                     className="flex-1"
                                     variant="secondary"
                                     onClick={() => openDirections(
@@ -365,16 +365,16 @@ export function SOS() {
                             )}
                             <Button className="flex-1" variant="secondary" onClick={shareLocation}>
                                 <Share2 size={18} style={{ marginRight: 8 }} /> Share
-                            </Button>
+                        </Button>
                             {['pending', 'accepted'].includes(requestStatus) && (
-                                <Button
+                        <Button 
                                     className="flex-1"
                                     variant="secondary"
                                     onClick={handleCancel}
                                     disabled={cancelling}
                                 >
                                     {cancelling ? 'Cancelling...' : 'Cancel request'}
-                                </Button>
+                        </Button>
                             )}
                         </div>
                     </div>

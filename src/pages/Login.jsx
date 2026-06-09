@@ -157,13 +157,16 @@ export function Login() {
 
     return (
         <div className="auth-container">
-            <div className="auth-brand-row">
-                <BrandLogo size={64} />
-                <ThemeToggle />
+            <div className="page-theme-corner">
+                <ThemeToggle compact />
             </div>
-            <div className="auth-header">
-                <h1 className="auth-title">Welcome Back</h1>
-                <p className="auth-subtitle">Login to find a mechanic nearby</p>
+
+            <div className="auth-intro">
+                <BrandLogo size={72} />
+                <div className="auth-header">
+                    <h1 className="auth-title">Welcome Back</h1>
+                    <p className="auth-subtitle">Login to find a mechanic nearby</p>
+                </div>
             </div>
 
             <Card className="auth-card">
