@@ -5,18 +5,38 @@ import { MapComponent } from '../components/MapComponent';
 import { MechanicCard } from '../components/MechanicCard';
 import { mechanics as mechanicsApi } from '../utils/api';
 import { getGreeting } from '../utils/format';
-import { resolveUserLocation, cacheUserLocation } from '../utils/location';
+import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
 import './Home.css';
 
 export function Home() {
     const navigate = useNavigate();
-    const [userLoc, setUserLoc] = useState([6.5244, 3.3792]);
+    const [userLoc, setUserLoc] = useState(null);
     const [userName, setUserName] = useState('Driver');
     const [locationLabel, setLocationLabel] = useState('Locating you...');
-    const [locationSource, setLocationSource] = useState('gps');
+    const [locationError, setLocationError] = useState('');
     const [nearbyMechanics, setNearbyMechanics] = useState([]);
     const [sheetExpanded, setSheetExpanded] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    const loadLocationAndMechanics = async () => {
+        try {
+            setLoading(true);
+            setLocationError('');
+            const location = await refreshUserLocation();
+            setUserLoc([location.lat, location.lng]);
+            setLocationLabel(location.label);
+
+            const response = await mechanicsApi.getNearby(location.lat, location.lng, 30);
+            setNearbyMechanics(response.data);
+        } catch (err) {
+            console.error('Location/mechanics error:', err);
+            setLocationError(getLocationErrorMessage(err));
+            setLocationLabel('Location unavailable');
+            setNearbyMechanics([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const userStr = localStorage.getItem('mekanik_user');
@@ -26,28 +46,7 @@ export function Home() {
         }
         const userData = JSON.parse(userStr);
         setUserName(userData.username || 'Driver');
-
-        const init = async () => {
-            try {
-                setLoading(true);
-                const location = await resolveUserLocation();
-                setUserLoc([location.lat, location.lng]);
-                setLocationLabel(location.label);
-                setLocationSource(location.source);
-                cacheUserLocation(location);
-
-                const response = await mechanicsApi.getNearby(location.lat, location.lng, 30);
-                setNearbyMechanics(response.data);
-            } catch (err) {
-                console.error('Error fetching dashboard mechanics:', err);
-                setLocationLabel('Lagos, Nigeria (default)');
-                setLocationSource('default');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        init();
+        loadLocationAndMechanics();
     }, [navigate]);
 
     const previewMechanics = sheetExpanded ? nearbyMechanics : nearbyMechanics.slice(0, 2);
@@ -56,8 +55,9 @@ export function Home() {
         <div className="home-map-layout">
             <div className="home-map-layer">
                 <MapComponent
-                    center={userLoc}
+                    center={userLoc || [6.5244, 3.3792]}
                     zoom={16}
+                    showUserLocation={!!userLoc}
                     mapStyle="live"
                     markers={nearbyMechanics}
                     fitToMarkers={nearbyMechanics.length > 0}
@@ -68,19 +68,23 @@ export function Home() {
                         <h2 className="home-greeting-text">{getGreeting(userName)}</h2>
                         <p className="home-location-line">
                             <Navigation size={13} />
-                            {loading ? 'Finding your location...' : (
-                                <>
-                                    You&apos;re in <strong>{locationLabel}</strong>
-                                    {locationSource === 'default' && ' — enable GPS for accuracy'}
-                                </>
+                            {loading ? 'Finding your location...' : locationError ? (
+                                <span className="home-location-error">{locationError}</span>
+                            ) : (
+                                <>You&apos;re in <strong>{locationLabel}</strong></>
                             )}
                         </p>
                     </div>
-                    {!loading && (
+                    {!loading && !locationError && (
                         <div className="nearby-chip">
                             <MapPin size={14} />
                             {nearbyMechanics.length} nearby
                         </div>
+                    )}
+                    {locationError && (
+                        <button type="button" className="location-retry-btn" onClick={loadLocationAndMechanics}>
+                            Enable location
+                        </button>
                     )}
                 </div>
             </div>

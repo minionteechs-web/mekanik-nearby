@@ -5,8 +5,8 @@ import { COLORS, SPACING, RADIUS, SHADOW } from '../constants/theme';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { mechanics } from '../utils/api';
-import { getCurrentLocation } from '../utils/geo';
-import { getRouteOffline } from '../utils/storage';
+import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
+import { getAllCachedMechanics } from '../utils/storage';
 import { formatDistance } from '../utils/format';
 import { ScreenLayout } from '../components/ScreenLayout';
 
@@ -16,6 +16,7 @@ export const MechanicList = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [onlineOnly, setOnlineOnly] = useState(false);
     const [fromCache, setFromCache] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchMechanics();
@@ -24,21 +25,19 @@ export const MechanicList = ({ navigation }) => {
     const fetchMechanics = async () => {
         setLoading(true);
         setFromCache(false);
+        setError('');
         try {
-            const coords = await getCurrentLocation();
-            const response = await mechanics.getNearby(
-                coords?.latitude || 6.5244,
-                coords?.longitude || 3.3792,
-                100000
-            );
+            const location = await refreshUserLocation();
+            const response = await mechanics.getNearby(location.lat, location.lng, 100000);
             setData(response.data);
         } catch (err) {
             console.error(err);
-            const offline = await getRouteOffline();
-            if (offline?.mechanics?.length) {
-                setData(offline.mechanics);
+            const cached = await getAllCachedMechanics();
+            if (cached.length) {
+                setData(cached);
                 setFromCache(true);
             }
+            setError(getLocationErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -86,9 +85,17 @@ export const MechanicList = ({ navigation }) => {
         <ScreenLayout navigation={navigation} currentRoute="Mechanics">
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <View>
+                <View style={{ flex: 1 }}>
                     <Text style={styles.headerTitle}>Find a Mechanic</Text>
                     {fromCache && <Text style={styles.cacheHint}>Showing offline cache</Text>}
+                    {error && !loading && (
+                        <>
+                            <Text style={styles.errorHint}>{error}</Text>
+                            <TouchableOpacity onPress={fetchMechanics}>
+                                <Text style={styles.retryLink}>Retry location</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
                 </View>
             </View>
 
@@ -155,6 +162,18 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: COLORS.brand,
         marginTop: 2,
+    },
+    errorHint: {
+        fontSize: 12,
+        color: COLORS.danger,
+        marginTop: 4,
+        lineHeight: 18,
+    },
+    retryLink: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: COLORS.brand,
+        marginTop: 4,
     },
     filterBtnActive: {
         backgroundColor: '#c44d20',

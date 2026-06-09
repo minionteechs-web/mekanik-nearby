@@ -6,6 +6,7 @@ import { EmptyState } from '../components/EmptyState';
 import { MechanicCardSkeleton } from '../components/Skeleton';
 import { mechanics as mechanicsApi } from '../utils/api';
 import { getAllCachedMechanics } from '../utils/routeStorage';
+import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
 import './MechanicList.css';
 
 export function MechanicList() {
@@ -17,37 +18,31 @@ export function MechanicList() {
     const [onlineOnly, setOnlineOnly] = useState(false);
     const [fromCache, setFromCache] = useState(false);
 
-    useEffect(() => {
-        const fetchNearbyMechanics = async (lat, lng) => {
-            try {
-                setLoading(true);
-                setFromCache(false);
-                const response = await mechanicsApi.getNearby(lat, lng, 50);
-                setMechanics(response.data);
-                setError('');
-            } catch (err) {
-                console.error('Error fetching mechanics:', err);
-                const cached = await getAllCachedMechanics();
-                if (cached.length) {
-                    setMechanics(cached);
-                    setFromCache(true);
-                    setError('');
-                } else {
-                    setError('Failed to load nearby mechanics.');
-                }
-            } finally {
-                setLoading(false);
+    const loadMechanics = async () => {
+        try {
+            setLoading(true);
+            setFromCache(false);
+            setError('');
+            const location = await refreshUserLocation();
+            const response = await mechanicsApi.getNearby(location.lat, location.lng, 50);
+            setMechanics(response.data);
+        } catch (err) {
+            console.error('Error fetching mechanics:', err);
+            const cached = await getAllCachedMechanics();
+            if (cached.length) {
+                setMechanics(cached);
+                setFromCache(true);
+                setError(getLocationErrorMessage(err));
+            } else {
+                setError(getLocationErrorMessage(err));
             }
-        };
-
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => fetchNearbyMechanics(pos.coords.latitude, pos.coords.longitude),
-                () => fetchNearbyMechanics(6.5244, 3.3792)
-            );
-        } else {
-            fetchNearbyMechanics(6.5244, 3.3792);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        loadMechanics();
     }, []);
 
     const filteredMechanics = mechanics
@@ -64,9 +59,16 @@ export function MechanicList() {
                 <div>
                     <h2>Find a Mechanic</h2>
                     <p className="list-subtitle">
-                        {loading ? 'Searching...' : `${filteredMechanics.length} available nearby`}
+                        {loading ? 'Searching...' : error && !fromCache
+                            ? error
+                            : `${filteredMechanics.length} available nearby`}
                         {fromCache && !loading && ' (offline cache)'}
                     </p>
+                    {error && !loading && (
+                        <button type="button" className="location-retry-inline" style={{ marginTop: '0.5rem' }} onClick={loadMechanics}>
+                            Retry location
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -96,7 +98,7 @@ export function MechanicList() {
                         <MechanicCardSkeleton />
                         <MechanicCardSkeleton />
                     </>
-                ) : error ? (
+                ) : error && mechanics.length === 0 ? (
                     <EmptyState icon={Wrench} title="Couldn't load mechanics" description={error} />
                 ) : filteredMechanics.length > 0 ? (
                     filteredMechanics.map((mech) => (

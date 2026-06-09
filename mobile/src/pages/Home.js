@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
-import { ShieldAlert, Compass, Wrench, ChevronUp, MapPin } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { ShieldAlert, Compass, Wrench, ChevronUp, MapPin, Navigation } from 'lucide-react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { Card } from '../components/Card';
 import { LiveMap } from '../components/LiveMap';
-import { requestLocationPermissions, getCurrentLocation } from '../utils/geo';
 import { mechanics, initSocket } from '../utils/api';
 import { t } from '../utils/i18n';
 import { getGreeting, formatDistance } from '../utils/format';
 import { ScreenLayout } from '../components/ScreenLayout';
+import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
+import { openLocationSettings } from '../utils/geo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_REGION } from '../constants/mapStyles';
 
@@ -16,6 +17,8 @@ export const Home = ({ navigation }) => {
     const [user, setUser] = useState(null);
     const [nearbyMechanics, setNearbyMechanics] = useState([]);
     const [location, setLocation] = useState(null);
+    const [locationLabel, setLocationLabel] = useState('Locating you...');
+    const [locationError, setLocationError] = useState('');
     const [loading, setLoading] = useState(false);
     const [sheetExpanded, setSheetExpanded] = useState(false);
     const [mapRegion, setMapRegion] = useState(DEFAULT_REGION);
@@ -33,24 +36,36 @@ export const Home = ({ navigation }) => {
 
     const setupLocationAndMechanics = async () => {
         setLoading(true);
+        setLocationError('');
         try {
-            const hasPermission = await requestLocationPermissions();
-            if (hasPermission) {
-                const coords = await getCurrentLocation();
-                if (coords) {
-                    setLocation(coords);
-                    setMapRegion({
-                        latitude: coords.latitude,
-                        longitude: coords.longitude,
-                        latitudeDelta: 0.08,
-                        longitudeDelta: 0.08,
-                    });
-                    const response = await mechanics.getNearby(coords.latitude, coords.longitude, 50000);
-                    setNearbyMechanics(response.data);
-                }
-            }
+            const loc = await refreshUserLocation();
+            setLocation({ latitude: loc.lat, longitude: loc.lng });
+            setLocationLabel(loc.label);
+            setMapRegion({
+                latitude: loc.lat,
+                longitude: loc.lng,
+                latitudeDelta: 0.045,
+                longitudeDelta: 0.045,
+            });
+            const response = await mechanics.getNearby(loc.lat, loc.lng, 50000);
+            setNearbyMechanics(response.data);
         } catch (err) {
             console.error(err);
+            const msg = getLocationErrorMessage(err);
+            setLocationError(msg);
+            setLocationLabel('Location unavailable');
+            setNearbyMechanics([]);
+            if (err?.code === 'denied' || err?.code === 'disabled') {
+                Alert.alert(
+                    'Location required',
+                    msg,
+                    [
+                        { text: 'Open Settings', onPress: openLocationSettings },
+                        { text: 'Try again', onPress: setupLocationAndMechanics },
+                        { text: 'Cancel', style: 'cancel' },
+                    ]
+                );
+            }
         } finally {
             setLoading(false);
         }
@@ -80,11 +95,21 @@ export const Home = ({ navigation }) => {
                         style={styles.map}
                     />
                     <SafeAreaView style={styles.mapOverlay}>
-                        <View>
+                        <View style={{ flex: 1 }}>
                             <Text style={styles.greetingTitle}>{getGreeting(user?.username || 'Driver')}</Text>
-                            <Text style={styles.greetingSubtitle}>{t('tagline')}</Text>
+                            <View style={styles.locationRow}>
+                                <Navigation size={12} color={locationError ? COLORS.danger : COLORS.brand} />
+                                <Text style={[styles.locationLine, locationError && styles.locationError]}>
+                                    {loading ? 'Finding your location...' : locationError || `You're in ${locationLabel}`}
+                                </Text>
+                            </View>
+                            {locationError && (
+                                <TouchableOpacity onPress={setupLocationAndMechanics}>
+                                    <Text style={styles.retryLink}>Enable location</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
-                        {!loading && nearbyMechanics.length > 0 && (
+                        {!loading && !locationError && nearbyMechanics.length > 0 && (
                             <View style={styles.nearbyChip}>
                                 <MapPin size={12} color={COLORS.brand} />
                                 <Text style={styles.nearbyChipText}>{nearbyMechanics.length} nearby</Text>
@@ -116,7 +141,7 @@ export const Home = ({ navigation }) => {
                         </View>
 
                         <Text style={styles.sheetTitle}>
-                            {loading ? 'Searching...' : `${nearbyMechanics.length} mechanics near you`}
+                            {loading ? 'Searching...' : locationError ? 'Enable GPS to find nearby mechanics' : `${nearbyMechanics.length} mechanics near you`}
                         </Text>
 
                         {preview.map((mech) => (
@@ -136,7 +161,7 @@ export const Home = ({ navigation }) => {
                             </Card>
                         ))}
 
-                        {!loading && nearbyMechanics.length === 0 && (
+                        {!loading && !locationError && nearbyMechanics.length === 0 && (
                             <Text style={styles.empty}>No mechanics online nearby right now.</Text>
                         )}
                     </View>
@@ -163,7 +188,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     greetingTitle: { fontSize: 22, fontWeight: '800', color: COLORS.textMain },
-    greetingSubtitle: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+    locationLine: { fontSize: 12, color: COLORS.textMuted, flex: 1 },
+    locationError: { color: COLORS.danger },
+    retryLink: { fontSize: 12, fontWeight: '700', color: COLORS.brand, marginTop: 4 },
     nearbyChip: {
         flexDirection: 'row',
         alignItems: 'center',

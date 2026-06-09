@@ -1,23 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Alert } from 'react-native';
-import { ChevronLeft, User, Globe, LogOut, ChevronRight, ShieldCheck } from 'lucide-react-native';
+import { User, Globe, LogOut, ChevronRight, ShieldCheck, Database, Map, Trash2 } from 'lucide-react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { Card } from '../components/Card';
 import { t, setLanguage, getCurrentLang } from '../utils/i18n';
 import { useAuth } from '../utils/authContext';
 import { auth as authApi } from '../utils/api';
-import { getOfflineMeta, clearOfflineData } from '../utils/storage';
+import { listSavedRoutes, deleteSavedRoute, clearAllRoutes, clearOfflineData } from '../utils/storage';
 import { formatBytes } from '../utils/format';
-import { Database } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 
 export const Profile = ({ navigation }) => {
     const { user, logout } = useAuth();
     const [lang, setLang] = useState(getCurrentLang());
-    const [offlineMeta, setOfflineMeta] = useState(null);
+    const [savedRoutes, setSavedRoutes] = useState([]);
+    const [loadingRoutes, setLoadingRoutes] = useState(true);
+
+    const refreshRoutes = async () => {
+        setLoadingRoutes(true);
+        const routes = await listSavedRoutes();
+        setSavedRoutes(routes);
+        setLoadingRoutes(false);
+    };
 
     useEffect(() => {
-        getOfflineMeta().then(setOfflineMeta);
+        refreshRoutes();
     }, []);
 
     const handleLogout = async () => {
@@ -28,8 +35,22 @@ export const Profile = ({ navigation }) => {
     const changeLang = async (newLang) => {
         await setLanguage(newLang);
         setLang(newLang);
-        Alert.alert("Language Updated", "App language has been changed.");
+        Alert.alert('Language Updated', 'App language has been changed.');
     };
+
+    const handleDeleteRoute = async (id) => {
+        const updated = await deleteSavedRoute(id);
+        setSavedRoutes(updated);
+    };
+
+    const handleClearAll = async () => {
+        await clearAllRoutes();
+        await clearOfflineData();
+        setSavedRoutes([]);
+    };
+
+    const totalMechanics = savedRoutes.reduce((sum, r) => sum + (r.count || 0), 0);
+    const totalBytes = savedRoutes.reduce((sum, r) => sum + JSON.stringify(r).length, 0);
 
     return (
         <ScreenLayout navigation={navigation} currentRoute="Profile">
@@ -50,20 +71,53 @@ export const Profile = ({ navigation }) => {
                 <Text style={styles.sectionTitle}>{t('settings')}</Text>
 
                 <Card style={styles.offlineCard}>
-                    <View style={styles.settingLeft}>
+                    <View style={styles.offlineHeader}>
                         <Database size={22} color={COLORS.brand} />
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.settingLabel}>Offline Data</Text>
+                            <Text style={styles.settingLabel}>Offline Routes</Text>
                             <Text style={styles.offlineSub}>
-                                {offlineMeta
-                                    ? `${offlineMeta.routeLabel} — ${offlineMeta.count} mechanics (${formatBytes(offlineMeta.sizeBytes)})`
-                                    : 'No routes saved'}
+                                {loadingRoutes
+                                    ? 'Loading saved routes...'
+                                    : savedRoutes.length
+                                        ? `${savedRoutes.length} route${savedRoutes.length > 1 ? 's' : ''} · ${totalMechanics} mechanics · ${formatBytes(totalBytes)}`
+                                        : 'No routes saved'}
                             </Text>
                         </View>
                     </View>
-                    {offlineMeta && (
-                        <TouchableOpacity onPress={async () => { await clearOfflineData(); setOfflineMeta(null); }}>
-                            <Text style={{ color: COLORS.danger, fontSize: 12, fontWeight: '700' }}>Clear</Text>
+
+                    {!loadingRoutes && savedRoutes.length > 0 && (
+                        <View style={styles.routesList}>
+                            {savedRoutes.map((route) => (
+                                <View key={route.id} style={styles.routeItem}>
+                                    <TouchableOpacity
+                                        style={styles.routeMain}
+                                        onPress={() => navigation.navigate('Route', { routeId: route.id })}
+                                    >
+                                        <Map size={18} color={COLORS.brand} />
+                                        <View style={styles.routeInfo}>
+                                            <Text style={styles.routeLabel} numberOfLines={1}>{route.label}</Text>
+                                            <Text style={styles.routeMeta}>
+                                                {route.count} mechanics
+                                                {route.route?.distanceKm != null && ` · ${route.route.distanceKm} km`}
+                                                {route.savedAt && ` · ${new Date(route.savedAt).toLocaleDateString()}`}
+                                            </Text>
+                                        </View>
+                                        <ChevronRight size={18} color="#444" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.routeDelete}
+                                        onPress={() => handleDeleteRoute(route.id)}
+                                    >
+                                        <Trash2 size={16} color={COLORS.danger} />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                    )}
+
+                    {savedRoutes.length > 0 && (
+                        <TouchableOpacity onPress={handleClearAll} style={styles.clearBtn}>
+                            <Text style={styles.clearBtnText}>Clear all offline data</Text>
                         </TouchableOpacity>
                     )}
                 </Card>
@@ -89,13 +143,13 @@ export const Profile = ({ navigation }) => {
                         </View>
                     </View>
 
-                    <TouchableOpacity 
-                        style={styles.settingItem} 
-                        onPress={() => user?.is_2fa_enabled ? 
-                            Alert.alert("Disable 2FA", "Are you sure you want to disable Two-Factor Authentication?", [
-                                { text: "Cancel", style: "cancel" },
-                                { text: "Disable", style: "destructive", onPress: () => authApi.toggle2FA({ enable: false }).then(() => Alert.alert("Success", "2FA disabled")) }
-                            ]) : 
+                    <TouchableOpacity
+                        style={styles.settingItem}
+                        onPress={() => user?.is_2fa_enabled ?
+                            Alert.alert('Disable 2FA', 'Are you sure you want to disable Two-Factor Authentication?', [
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'Disable', style: 'destructive', onPress: () => authApi.toggle2FA({ enable: false }).then(() => Alert.alert('Success', '2FA disabled')) },
+                            ]) :
                             navigation.navigate('TwoFactorSetup')
                         }
                     >
@@ -140,8 +194,37 @@ const styles = StyleSheet.create({
     userName: { fontSize: 22, fontWeight: '700', color: COLORS.textMain },
     userEmail: { fontSize: 14, color: COLORS.textMuted, marginTop: 4 },
     sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textMain, marginBottom: 16 },
-    offlineCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.xl, marginBottom: SPACING.lg },
+    offlineCard: { padding: SPACING.xl, marginBottom: SPACING.lg },
+    offlineHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
     offlineSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 4 },
+    routesList: { marginTop: SPACING.lg, gap: 8 },
+    routeItem: {
+        flexDirection: 'row',
+        backgroundColor: COLORS.inputBg,
+        borderRadius: RADIUS.md,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.06)',
+        overflow: 'hidden',
+    },
+    routeMain: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        padding: SPACING.md,
+    },
+    routeInfo: { flex: 1, minWidth: 0 },
+    routeLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textMain },
+    routeMeta: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+    routeDelete: {
+        width: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderLeftWidth: 1,
+        borderLeftColor: 'rgba(255,255,255,0.06)',
+    },
+    clearBtn: { marginTop: SPACING.md },
+    clearBtnText: { color: COLORS.danger, fontSize: 12, fontWeight: '700' },
     settingsCard: { padding: 0, overflow: 'hidden' },
     settingItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.xl, borderBottomWidth: 1, borderBottomColor: '#222' },
     settingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },

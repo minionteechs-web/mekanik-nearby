@@ -10,7 +10,7 @@ import { RouteInsights } from '../components/RouteInsights';
 import { useToast } from '../components/Toast';
 import { downloadRouteMechanics } from '../utils/routePlanner';
 import { planRoute } from '../utils/routeGeometry';
-import { resolveUserLocation, getCachedUserLocation } from '../utils/location';
+import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
 import { getSavedRoute, listSavedRoutes } from '../utils/routeStorage';
 import { openRouteInGoogleMaps } from '../utils/maps';
 import './MechanicList.css';
@@ -28,19 +28,18 @@ export function RoutePlanner() {
     const [previewing, setPreviewing] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [error, setError] = useState('');
+    const [locationError, setLocationError] = useState('');
 
     useEffect(() => {
-        const cached = getCachedUserLocation();
-        if (cached?.label) {
-            const city = cached.label.split(',')[0].trim();
-            setStart(city);
-            setUserLocation(cached);
-        } else {
-            resolveUserLocation().then((loc) => {
+        refreshUserLocation()
+            .then((loc) => {
                 setUserLocation(loc);
                 setStart(loc.label.split(',')[0].trim());
+                setLocationError('');
+            })
+            .catch((err) => {
+                setLocationError(getLocationErrorMessage(err));
             });
-        }
 
         const routeId = searchParams.get('routeId');
         const loadSaved = async () => {
@@ -117,10 +116,29 @@ export function RoutePlanner() {
                 <h2>Route Planner</h2>
             </header>
 
-            {userLocation && (
-                <div className="location-banner">
+            {(userLocation || locationError) && (
+                <div className={`location-banner ${locationError ? 'location-banner-error' : ''}`}>
                     <Navigation size={16} />
-                    <span>Your location: <strong>{userLocation.label}</strong></span>
+                    {userLocation ? (
+                        <span>Your location: <strong>{userLocation.label}</strong></span>
+                    ) : (
+                        <span>{locationError}</span>
+                    )}
+                    {locationError && (
+                        <button
+                            type="button"
+                            className="location-retry-inline"
+                            onClick={() => refreshUserLocation()
+                                .then((loc) => {
+                                    setUserLocation(loc);
+                                    setStart(loc.label.split(',')[0].trim());
+                                    setLocationError('');
+                                })
+                                .catch((err) => setLocationError(getLocationErrorMessage(err)))}
+                        >
+                            Retry
+                        </button>
+                    )}
                 </div>
             )}
 

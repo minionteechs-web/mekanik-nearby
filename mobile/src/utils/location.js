@@ -1,5 +1,10 @@
-import { geocodePlace } from './geocode';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getCurrentLocation, LocationError } from './geo';
 
+const CACHE_KEY = 'mekanik_user_location';
+const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+
+// Re-export shared reverse geocode logic inline to avoid extra file
 const NIGERIAN_CITIES = {
     lagos: { lat: 6.5244, lng: 3.3792, label: 'Lagos' },
     ibadan: { lat: 7.3775, lng: 3.947, label: 'Ibadan' },
@@ -8,9 +13,6 @@ const NIGERIAN_CITIES = {
     kano: { lat: 12.0022, lng: 8.592, label: 'Kano' },
     'port harcourt': { lat: 4.8156, lng: 7.0498, label: 'Port Harcourt' },
 };
-
-const CACHE_KEY = 'mekanik_user_location';
-const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
 
 const toRad = (deg) => (deg * Math.PI) / 180;
 
@@ -24,15 +26,7 @@ const distanceKm = (lat1, lng1, lat2, lng2) => {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-export class LocationError extends Error {
-    constructor(code, message) {
-        super(message);
-        this.name = 'LocationError';
-        this.code = code;
-    }
-}
-
-export const nearestCityLabel = (lat, lng) => {
+const nearestCityLabel = (lat, lng) => {
     let best = { label: 'Nigeria', dist: Infinity };
     Object.values(NIGERIAN_CITIES).forEach((city) => {
         const dist = distanceKm(lat, lng, city.lat, city.lng);
@@ -62,61 +56,40 @@ export const reverseGeocode = async (lat, lng) => {
     return `${nearestCityLabel(lat, lng)}, Nigeria`;
 };
 
-export const getCurrentPosition = () =>
-    new Promise((resolve, reject) => {
-        if (!('geolocation' in navigator)) {
-            reject(new LocationError('unsupported', 'Geolocation is not supported in this browser.'));
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(
-            (pos) => resolve({
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-                accuracy: pos.coords.accuracy,
-            }),
-            (err) => {
-                const code = err.code === 1 ? 'denied'
-                    : err.code === 2 ? 'unavailable'
-                        : err.code === 3 ? 'timeout'
-                            : 'error';
-                const messages = {
-                    denied: 'Location permission denied. Allow location access in your browser settings.',
-                    unavailable: 'GPS signal unavailable. Try moving outdoors or enabling device location.',
-                    timeout: 'Location request timed out. Please try again.',
-                    error: err.message || 'Could not read your location.',
-                };
-                reject(new LocationError(code, messages[code]));
-            },
-            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-        );
-    });
+export { LocationError };
 
 export const resolveUserLocation = async () => {
-    const coords = await getCurrentPosition();
-    const label = await reverseGeocode(coords.lat, coords.lng);
-    return { ...coords, label, source: 'gps' };
+    const coords = await getCurrentLocation();
+    const label = await reverseGeocode(coords.latitude, coords.longitude);
+    return {
+        lat: coords.latitude,
+        lng: coords.longitude,
+        accuracy: coords.accuracy,
+        label,
+        source: 'gps',
+    };
 };
 
-export const cacheUserLocation = (location) => {
+export const cacheUserLocation = async (location) => {
     if (!location || location.source !== 'gps') return;
     if (location.lat == null || location.lng == null) return;
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
+    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({
         ...location,
         cachedAt: new Date().toISOString(),
     }));
 };
 
-export const clearCachedUserLocation = () => {
-    localStorage.removeItem(CACHE_KEY);
+export const clearCachedUserLocation = async () => {
+    await AsyncStorage.removeItem(CACHE_KEY);
 };
 
-export const getCachedUserLocation = () => {
-    const raw = localStorage.getItem(CACHE_KEY);
+export const getCachedUserLocation = async () => {
+    const raw = await AsyncStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     try {
         const parsed = JSON.parse(raw);
         if (parsed.source !== 'gps' || parsed.label?.includes('(default)')) {
-            clearCachedUserLocation();
+            await clearCachedUserLocation();
             return null;
         }
         if (parsed.cachedAt) {
@@ -125,15 +98,14 @@ export const getCachedUserLocation = () => {
         }
         return parsed;
     } catch {
-        clearCachedUserLocation();
+        await clearCachedUserLocation();
         return null;
     }
 };
 
-/** Always requests fresh GPS — never falls back to Lagos. */
 export const refreshUserLocation = async () => {
     const location = await resolveUserLocation();
-    cacheUserLocation(location);
+    await cacheUserLocation(location);
     return location;
 };
 

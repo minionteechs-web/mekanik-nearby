@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Card } from '../components/Card';
 import { auth } from '../utils/api';
-import { resolveUserLocation, cacheUserLocation } from '../utils/location';
+import { refreshUserLocation } from '../utils/location';
 import './Auth.css';
 
 export function Login() {
@@ -44,7 +44,7 @@ export function Login() {
 
             const { token, user } = response.data;
             localStorage.setItem('mekanik_user', JSON.stringify({ ...user, token }));
-            resolveUserLocation().then(cacheUserLocation).catch(() => {});
+            refreshUserLocation().catch(() => {});
             navigatePostLogin(user);
         } catch (err) {
             console.error(err);
@@ -67,7 +67,7 @@ export function Login() {
             const response = await auth.verify2FA({ token: preAuthToken, code: twoFACode });
             const { token, user } = response.data;
             localStorage.setItem('mekanik_user', JSON.stringify({ ...user, token }));
-            resolveUserLocation().then(cacheUserLocation).catch(() => {});
+            refreshUserLocation().catch(() => {});
             navigatePostLogin(user);
         } catch (err) {
             console.error(err);
