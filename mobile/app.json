@@ -38,11 +38,19 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "mekaniknearby",
     "plugins": [
       [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Mekanik Nearby to use your location for finding mechanics and emergency SOS."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#FFC107"
         }
       ]
     ]

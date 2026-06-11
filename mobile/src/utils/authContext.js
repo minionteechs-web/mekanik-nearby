@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initSocket, disconnectSocket } from './api';
+import { registerForPushNotifications } from './pushNotifications';
 import { refreshUserLocation } from './location';
 import { initI18n } from './i18n';
 
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }) => {
                     setUser(userData);
                     console.log("[Auth] Initializing Socket...");
                     await initSocket();
+                    registerForPushNotifications().catch(() => {});
                 } else {
                     console.log("[Auth] No user found in storage.");
                 }
@@ -43,6 +45,7 @@ export const AuthProvider = ({ children }) => {
         await AsyncStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
         await initSocket();
+        registerForPushNotifications().catch(() => {});
         refreshUserLocation().catch(() => {});
     };
 

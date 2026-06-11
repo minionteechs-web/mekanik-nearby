@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const { notifyUser } = require('../utils/socketLogic');
 const { mapMessageUrls } = require('../utils/publicUrl');
+const { sanitizeText } = require('../utils/sanitize');
 
 const assertRequestParticipant = async (requestId, userId) => {
     const requestResult = await db.query(
@@ -66,12 +67,17 @@ exports.sendMessage = async (req, res) => {
             return res.status(access.error.status).json({ message: access.error.message });
         }
 
+        const safeContent = sanitizeText(content, 2000);
+        if (!safeContent) {
+            return res.status(400).json({ message: 'Message content cannot be empty' });
+        }
+
         const query = `
             INSERT INTO messages (request_id, sender_id, receiver_id, content, message_type)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING *
         `;
-        const result = await db.query(query, [requestId, senderId, receiverId, content, messageType]);
+        const result = await db.query(query, [requestId, senderId, receiverId, safeContent, messageType]);
         const message = result.rows[0];
 
         const senderName = req.user.username || 'User';

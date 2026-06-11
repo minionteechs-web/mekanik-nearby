@@ -29,9 +29,11 @@ const canUsePostGISLocation = async () => {
 };
 
 const haversineNearbyQuery = `
-    SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city, lat, lng, distance_meters
+    SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city, state,
+           lat, lng, distance_meters, verification_status, years_experience, certification
     FROM (
-        SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city, lat, lng,
+        SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city, state, lat, lng,
+               verification_status, years_experience, certification,
                (6371000 * acos(
                    LEAST(1, GREATEST(-1,
                        cos(radians($1)) * cos(radians(lat)) * cos(radians(lng) - radians($2)) +
@@ -46,7 +48,8 @@ const haversineNearbyQuery = `
 `;
 
 const postgisNearbyQuery = `
-    SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city,
+    SELECT id, user_id, name, specialty, rating, reviews_count, is_available, address, city, state,
+           verification_status, years_experience, certification,
            ST_X(location::geometry) as lng, ST_Y(location::geometry) as lat,
            ST_Distance(location, ST_SetSRID(ST_Point($1, $2), 4326)::geography) as distance_meters
     FROM mechanics

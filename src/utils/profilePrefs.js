@@ -26,6 +26,15 @@ export function saveProfilePrefs(prefs) {
     return merged;
 }
 
+export function getStoredUser() {
+    try {
+        const raw = localStorage.getItem('mekanik_user');
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
 export function updateStoredUser(partial) {
     const raw = localStorage.getItem('mekanik_user');
     if (!raw) return null;

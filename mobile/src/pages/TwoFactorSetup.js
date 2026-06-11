@@ -8,16 +8,19 @@ import { auth } from '../utils/api';
 import { useAuth } from '../utils/authContext';
 
 export const TwoFactorSetup = ({ navigation }) => {
-    const { updateUser } = useAuth();
-    const [loading, setLoading] = useState(true);
+    const { user, updateUser } = useAuth();
+    const alreadyEnabled = Boolean(user?.is_2fa_enabled);
+    const [loading, setLoading] = useState(!alreadyEnabled);
     const [verifying, setVerifying] = useState(false);
     const [qrCode, setQrCode] = useState(null);
     const [secret, setSecret] = useState('');
     const [code, setCode] = useState('');
 
     useEffect(() => {
-        fetchSetupData();
-    }, []);
+        if (!alreadyEnabled) {
+            fetchSetupData();
+        }
+    }, [alreadyEnabled]);
 
     const fetchSetupData = async () => {
         setLoading(true);
@@ -52,6 +55,25 @@ export const TwoFactorSetup = ({ navigation }) => {
         }
     };
 
+    const handleDisable = async () => {
+        if (code.length !== 6) {
+            return Alert.alert("Error", "Enter your current 6-digit code to disable 2FA.");
+        }
+
+        setVerifying(true);
+        try {
+            await auth.toggle2FA({ enable: false, code });
+            await updateUser({ is_2fa_enabled: false });
+            Alert.alert("Success", "Two-Factor Authentication has been disabled.", [
+                { text: "OK", onPress: () => navigation.goBack() }
+            ]);
+        } catch (err) {
+            Alert.alert("Failed", err.response?.data?.message || "Invalid code. Please try again.");
+        } finally {
+            setVerifying(false);
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -66,50 +88,71 @@ export const TwoFactorSetup = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <ChevronLeft size={28} color={COLORS.textMain} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Two-Factor Setup</Text>
+                <Text style={styles.headerTitle}>
+                    {alreadyEnabled ? 'Manage 2FA' : 'Two-Factor Setup'}
+                </Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.scroll}>
                 <View style={styles.iconBox}>
                     <ShieldCheck size={60} color={COLORS.brand} />
                 </View>
-                
-                <Text style={styles.stepTitle}>Step 1: Scan QR Code</Text>
-                <Text style={styles.stepDesc}>Open your authenticator app (Google Authenticator, Authy, etc.) and scan the code below.</Text>
 
-                <View style={styles.qrContainer}>
-                    {qrCode && <Image source={{ uri: qrCode }} style={styles.qrImage} />}
-                </View>
+                {alreadyEnabled ? (
+                    <>
+                        <Text style={styles.stepTitle}>2FA is enabled</Text>
+                        <Text style={styles.stepDesc}>
+                            Enter a current code from your authenticator app to disable two-factor authentication.
+                        </Text>
+                        <Input
+                            label="Verification Code"
+                            placeholder="000000"
+                            value={code}
+                            onChangeText={setCode}
+                            keyboardType="number-pad"
+                            maxLength={6}
+                            style={styles.otpInput}
+                        />
+                        <Button onPress={handleDisable} loading={verifying} style={styles.enableBtn}>
+                            Disable 2FA
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.stepTitle}>Step 1: Scan QR Code</Text>
+                        <Text style={styles.stepDesc}>Open your authenticator app (Google Authenticator, Authy, etc.) and scan the code below.</Text>
 
-                <Text style={styles.stepTitle}>Step 2: Manual Entry (Optional)</Text>
-                <Text style={styles.stepDesc}>If you can't scan, enter this secret key manually:</Text>
-                
-                <View style={styles.secretBox}>
-                    <Text style={styles.secretText}>{secret}</Text>
-                </View>
+                        <View style={styles.qrContainer}>
+                            {qrCode && <Image source={{ uri: qrCode }} style={styles.qrImage} />}
+                        </View>
 
-                <View style={styles.divider} />
+                        <Text style={styles.stepTitle}>Step 2: Manual Entry (Optional)</Text>
+                        <Text style={styles.stepDesc}>If you can't scan, enter this secret key manually:</Text>
 
-                <Text style={styles.stepTitle}>Step 3: Verify & Enable</Text>
-                <Text style={styles.stepDesc}>Enter the 6-digit code from your app to confirm.</Text>
+                        <View style={styles.secretBox}>
+                            <Text style={styles.secretText}>{secret}</Text>
+                        </View>
 
-                <Input
-                    label="Verification Code"
-                    placeholder="000000"
-                    value={code}
-                    onChangeText={setCode}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    style={styles.otpInput}
-                />
+                        <View style={styles.divider} />
 
-                <Button
-                    onPress={handleEnable}
-                    loading={verifying}
-                    style={styles.enableBtn}
-                >
-                    Enable 2FA
-                </Button>
+                        <Text style={styles.stepTitle}>Step 3: Verify & Enable</Text>
+                        <Text style={styles.stepDesc}>Enter the 6-digit code from your app to confirm.</Text>
+
+                        <Input
+                            label="Verification Code"
+                            placeholder="000000"
+                            value={code}
+                            onChangeText={setCode}
+                            keyboardType="number-pad"
+                            maxLength={6}
+                            style={styles.otpInput}
+                        />
+
+                        <Button onPress={handleEnable} loading={verifying} style={styles.enableBtn}>
+                            Enable 2FA
+                        </Button>
+                    </>
+                )}
             </ScrollView>
         </SafeAreaView>
     );

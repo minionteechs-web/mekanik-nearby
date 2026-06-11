@@ -12,21 +12,23 @@ const {
     updateMe,
     changePassword,
     uploadAvatar,
+    deleteAccount,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const { authLimiter, uploadLimiter } = require('../middleware/rateLimit');
 const avatarUpload = require('../config/avatarMulter');
 
-router.post('/register', register);
-router.post('/login', login);
-router.post('/verify-2fa', verify2FA);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/register', authLimiter, register);
+router.post('/login', authLimiter, login);
+router.post('/verify-2fa', authLimiter, verify2FA);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 
-// Protected routes
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateMe);
+router.delete('/me', protect, deleteAccount);
 router.put('/change-password', protect, changePassword);
-router.post('/me/avatar', protect, avatarUpload.single('avatar'), uploadAvatar);
+router.post('/me/avatar', protect, uploadLimiter, avatarUpload.single('avatar'), uploadAvatar);
 router.post('/setup-2fa', protect, setup2FA);
 router.post('/toggle-2fa', protect, toggle2FA);
 

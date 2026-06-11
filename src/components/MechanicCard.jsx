@@ -14,8 +14,13 @@ export function MechanicCard({ mechanic, onClick }) {
                     <div className="mech-name-row">
                         <h3>{mechanic.name}</h3>
                         {mechanic.is_available && (
+                            <span className="verified-badge online-badge">
+                                Online
+                            </span>
+                        )}
+                        {mechanic.is_verified && (
                             <span className="verified-badge">
-                                <ShieldCheck size={12} /> Online
+                                <ShieldCheck size={12} /> Verified
                             </span>
                         )}
                     </div>

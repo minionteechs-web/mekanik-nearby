@@ -38,18 +38,44 @@ export const auth = {
         api.post('/auth/me/avatar', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
+    deleteAccount: (password) => api.delete('/auth/me', { data: { password } }),
 };
 
 export const notifications = {
     getAll: () => api.get('/notifications'),
+    getUnreadCount: () => api.get('/notifications/unread-count'),
     markRead: (id) => api.put(`/notifications/${id}/read`),
     markAllRead: () => api.put('/notifications/read-all'),
+};
+
+export const bookings = {
+    getAll: () => api.get('/bookings'),
+    create: (data) => api.post('/bookings', data),
+    updateStatus: (id, status) => api.put(`/bookings/${id}/status`, { status }),
+};
+
+export const admin = {
+    getStats: () => api.get('/admin/stats'),
+    getUsers: () => api.get('/admin/users'),
+    getPendingMechanics: () => api.get('/admin/mechanics/pending'),
+    verifyMechanic: (id, data) => api.put(`/admin/mechanics/${id}/verify`, data),
+    getReports: () => api.get('/admin/reports'),
+    resolveReport: (id, status) => api.put(`/admin/reports/${id}`, { status }),
+    getRequests: () => api.get('/admin/requests'),
+};
+
+export const reports = {
+    create: (data) => api.post('/reports', data),
+    block: (blocked_id) => api.post('/reports/block', { blocked_id }),
+    unblock: (userId) => api.delete(`/reports/block/${userId}`),
+    getBlocks: () => api.get('/reports/blocks'),
 };
 
 export const mechanics = {
     getNearby: (lat, lng, radiusKm = 50) =>
         api.get(`/mechanics/nearby?lat=${lat}&lng=${lng}&radius=${radiusKm * 1000}`),
     getDetail: (id) => api.get(`/mechanics/${id}`),
+    getCatalog: (userId) => api.get(`/mechanics/catalog/${userId}`),
     onboard: (data) => api.post('/mechanics/onboard', data),
     getMyProfile: () => api.get('/mechanics/me/profile'),
     updateAvailability: (is_available) =>
@@ -59,6 +85,8 @@ export const mechanics = {
 export const requests = {
     create: (data) => api.post('/requests', data),
     getUserRequests: () => api.get('/requests/my-requests'),
+    getIncoming: () => api.get('/requests/incoming'),
+    getById: (id) => api.get(`/requests/${id}`),
     accept: (id) => api.put(`/requests/${id}/accept`),
     cancel: (id) => api.put(`/requests/${id}/cancel`),
     updateStatus: (id, status) => api.put(`/requests/${id}/status`, { status }),
@@ -76,6 +104,7 @@ export const messages = {
 export const reviews = {
     create: (data) => api.post('/reviews', data),
     getForMechanic: (userId) => api.get(`/reviews/mechanic/${userId}`),
+    getEligibility: (userId) => api.get(`/reviews/eligibility/${userId}`),
 };
 
 let socket;

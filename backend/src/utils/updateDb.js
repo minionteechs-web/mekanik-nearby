@@ -1,11 +1,22 @@
 const db = require('../config/db');
+const fs = require('fs');
+const path = require('path');
+
+const runMigration = async () => {
+    const sqlPath = path.join(__dirname, '../../scripts/migrate-v2.sql');
+    const sql = fs.readFileSync(sqlPath, 'utf8');
+    await db.query(sql);
+};
 
 const updateDb = async () => {
     try {
-        const query = `
+        const legacy = `
             ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
             ALTER TABLE users ADD COLUMN IF NOT EXISTS is_2fa_enabled BOOLEAN DEFAULT FALSE;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP WITH TIME ZONE;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
             CREATE TABLE IF NOT EXISTS messages (
                 id SERIAL PRIMARY KEY,
@@ -29,9 +40,6 @@ const updateDb = async () => {
                 END IF;
             END $$;
 
-            ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;
-            ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP WITH TIME ZONE;
-
             CREATE TABLE IF NOT EXISTS notifications (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -46,8 +54,9 @@ const updateDb = async () => {
             CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
         `;
 
-        await db.query(query);
-        console.log('Database updated successfully.');
+        await db.query(legacy);
+        await runMigration();
+        console.log('Database updated successfully (v2 migration applied).');
         process.exit(0);
     } catch (err) {
         console.error('Error updating database:', err);

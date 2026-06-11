@@ -21,6 +21,7 @@ export const SOS = ({ navigation, route }) => {
     const [userLocation, setUserLocation] = useState(null);
     const [mechanicLocation, setMechanicLocation] = useState(null);
     const [requestStatus, setRequestStatus] = useState('pending');
+    const [notifiedCount, setNotifiedCount] = useState(0);
     const activeRequestIdRef = useRef(null);
 
     useEffect(() => {
@@ -126,6 +127,7 @@ export const SOS = ({ navigation, route }) => {
             }
 
             setNearest(nearestMech);
+            setNotifiedCount(nearbyRes.data.length);
             setStatus('found');
         } catch (err) {
             console.error(err);
@@ -150,23 +152,25 @@ export const SOS = ({ navigation, route }) => {
         }
     };
 
-    const confirmRequest = async () => {
-        if (!nearest) return;
+    const confirmRequest = async (useBroadcast = true) => {
         try {
             const coords = await getCurrentLocation();
             if (!coords) return;
             setUserLocation(coords);
 
-            const requestRes = await requests.create({
-                mechanic_id: nearest.user_id,
-                lat: coords.latitude,
-                lng: coords.longitude,
-            });
+            const payload = useBroadcast
+                ? { lat: coords.latitude, lng: coords.longitude, broadcast: true }
+                : { lat: coords.latitude, lng: coords.longitude, mechanic_id: nearest?.user_id };
+
+            const requestRes = await requests.create(payload);
 
             setActiveRequest(requestRes.data);
             activeRequestIdRef.current = requestRes.data.id;
             setRequestStatus('pending');
             setStatus('tracking');
+            if (requestRes.data.notified_count) {
+                setNotifiedCount(requestRes.data.notified_count);
+            }
         } catch (err) {
             if (err.response?.status === 409) {
                 const existingId = err.response?.data?.requestId;
@@ -175,7 +179,7 @@ export const SOS = ({ navigation, route }) => {
                     { text: 'OK' },
                 ]);
             } else {
-                Alert.alert('Request Failed', 'Could not send help request.');
+                Alert.alert('Request Failed', err.response?.data?.message || 'Could not send help request.');
             }
         }
     };
@@ -218,7 +222,17 @@ export const SOS = ({ navigation, route }) => {
                         {requestStatus === 'pending' ? 'Waiting for mechanic' : 'Help is on the way'}
                     </Text>
                     <Text style={styles.trackingSub}>Live map · Real roads & GPS tracking</Text>
-                    {nearest && <Text style={styles.mechLine}>Notified: <Text style={styles.bold}>{nearest.name}</Text></Text>}
+                    {nearest ? (
+                        <Text style={styles.mechLine}>
+                            {requestStatus === 'pending'
+                                ? <>Broadcast to <Text style={styles.bold}>{notifiedCount || 'nearby'}</Text> mechanics</>
+                                : <>Assigned: <Text style={styles.bold}>{nearest.name}</Text></>}
+                        </Text>
+                    ) : requestStatus === 'pending' && notifiedCount > 0 ? (
+                        <Text style={styles.mechLine}>
+                            Waiting for one of <Text style={styles.bold}>{notifiedCount}</Text> mechanics
+                        </Text>
+                    ) : null}
 
                     <StatusTimeline currentStatus={requestStatus} />
 
@@ -298,15 +312,20 @@ export const SOS = ({ navigation, route }) => {
                     </View>
                     <View style={styles.foundPanel}>
                         <Text style={styles.foundTitle}>Help found</Text>
-                        <Text style={styles.foundSubtitle}>{formatDistance(nearest.distance_meters)} away</Text>
+                        <Text style={styles.foundSubtitle}>
+                            {notifiedCount || 1} mechanic{(notifiedCount || 1) > 1 ? 's' : ''} nearby
+                        </Text>
                         <Card style={styles.mechCard}>
                             <Text style={styles.mechName}>{nearest.name}</Text>
                             <Text style={styles.mechSpec}>{nearest.specialty}</Text>
                         </Card>
                         <View style={styles.actionRow}>
-                            <Button style={styles.flex1} onPress={confirmRequest}>Request Help</Button>
-                            <Button style={styles.flex1} variant="secondary" onPress={() => setStatus('idle')}>Cancel</Button>
+                            <Button style={styles.flex1} onPress={() => confirmRequest(true)}>Broadcast SOS</Button>
+                            <Button style={styles.flex1} variant="secondary" onPress={() => confirmRequest(false)}>
+                                Request {nearest.name?.split(' ')[0] || 'this one'}
+                            </Button>
                         </View>
+                        <Button variant="secondary" onPress={() => setStatus('idle')}>Cancel</Button>
                     </View>
                 </View>
             )}

@@ -38,10 +38,13 @@ export const MechanicDashboard = ({ navigation }) => {
 
     const loadPendingRequests = async () => {
         try {
-            const response = await requests.getUserRequests();
-            const pending = response.data.filter((r) => r.status === 'pending');
-            const active = response.data.find((r) => ['accepted', 'en-route', 'arrived'].includes(r.status));
-            setCompletedCount(response.data.filter((r) => r.status === 'completed').length);
+            const [assignedRes, incomingRes] = await Promise.all([
+                requests.getUserRequests(),
+                requests.getIncoming(),
+            ]);
+            const pending = incomingRes.data;
+            const active = assignedRes.data.find((r) => ['accepted', 'en-route', 'arrived'].includes(r.status));
+            setCompletedCount(assignedRes.data.filter((r) => r.status === 'completed').length);
             setIncomingRequests(pending);
             if (active) setActiveRequest(active);
         } catch (err) {
@@ -52,10 +55,15 @@ export const MechanicDashboard = ({ navigation }) => {
     const setupSocket = async () => {
         const socket = await initSocket();
         if (socket) {
-            socket.on('new_request', (data) => {
-                setIncomingRequests(prev => [data, ...prev]);
-                Alert.alert("New SOS Request!", "A driver nearby needs your assistance.");
-            });
+            const onNew = (data) => {
+                setIncomingRequests((prev) => {
+                    if (prev.some((r) => r.id === data.id)) return prev;
+                    return [data, ...prev];
+                });
+                Alert.alert('New SOS Request!', 'A driver nearby needs your assistance.');
+            };
+            socket.on('new_request', onNew);
+            socket.on('new_broadcast_request', onNew);
 
             socket.on('status_updated', (data) => {
                 if (data.status === 'cancelled') {

@@ -26,7 +26,7 @@ export function SOS() {
     const [requestStatus, setRequestStatus] = useState('pending');
     const [userPosition, setUserPosition] = useState(null);
     const [mechanicPosition, setMechanicPosition] = useState(null);
-    const [cancelling, setCancelling] = useState(false);
+    const [notifiedCount, setNotifiedCount] = useState(0);
     const activeRequestIdRef = useRef(null);
 
     useEffect(() => {
@@ -148,8 +148,9 @@ export function SOS() {
 
                     if (list?.length > 0) {
                         setNearest(list[0]);
-                            setStatus('found');
-                        } else {
+                        setNotifiedCount(list.length);
+                        setStatus('found');
+                    } else {
                         setError('No mechanics available within 50 km. Try again shortly.');
                             setStatus('idle');
                         }
@@ -173,32 +174,38 @@ export function SOS() {
             );
     };
 
-    const confirmRequest = () => {
-        if (!nearest) return;
+    const confirmRequest = (useBroadcast = true) => {
         setLoading(true);
 
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
-        try {
-                const { latitude, longitude } = pos.coords;
+                try {
+                    const { latitude, longitude } = pos.coords;
                     setUserPosition([latitude, longitude]);
-                const response = await requestsApi.create({
-                        mechanic_id: nearest.user_id,
-                    lat: latitude,
-                        lng: longitude,
-                });
-                setActiveRequestId(response.data.id);
+                    const payload = useBroadcast
+                        ? { lat: latitude, lng: longitude, broadcast: true }
+                        : { lat: latitude, lng: longitude, mechanic_id: nearest?.user_id };
+                    const response = await requestsApi.create(payload);
+                    setActiveRequestId(response.data.id);
                     activeRequestIdRef.current = response.data.id;
                     setRequestStatus('pending');
                     setStatus('tracking');
-                    showToast('Help request sent. Stay where you are.', 'success');
-        } catch (err) {
+                    if (response.data.notified_count) {
+                        setNotifiedCount(response.data.notified_count);
+                    }
+                    showToast(
+                        useBroadcast
+                            ? `Broadcast sent to ${response.data.notified_count || 'nearby'} mechanics`
+                            : 'Help request sent. Stay where you are.',
+                        'success'
+                    );
+                } catch (err) {
                     if (err.response?.status === 409) {
                         const existingId = err.response?.data?.requestId;
                         setError('You already have an active request. Open Activity to track it.');
                         if (existingId) navigate(`/sos?track=${existingId}`);
                     } else {
-                        setError('Failed to send request. The mechanic may be offline.');
+                        setError(err.response?.data?.message || 'Failed to send request.');
                     }
                 } finally {
                     setLoading(false);
@@ -298,12 +305,19 @@ export function SOS() {
                     </div>
                     <div className="sos-found-panel">
                         <h2>Help found</h2>
-                        <p>{formatDistance(nearest.distance_meters)} away — ready to assist</p>
-                        <MechanicCard mechanic={nearest} onClick={() => navigate(`/mechanic/${nearest.id}`)} />
+                        <p>{notifiedCount || 1} mechanic{(notifiedCount || 1) > 1 ? 's' : ''} nearby — broadcast SOS to all</p>
+                        {nearest && (
+                            <MechanicCard mechanic={nearest} onClick={() => navigate(`/mechanic/${nearest.id}`)} />
+                        )}
                         <div className="sos-actions">
-                            <Button className="flex-1" onClick={confirmRequest} disabled={loading}>
-                                {loading ? 'Sending...' : 'Request Help'}
+                            <Button className="flex-1" onClick={() => confirmRequest(true)} disabled={loading}>
+                                {loading ? 'Sending...' : 'Broadcast SOS'}
                             </Button>
+                            {nearest && (
+                                <Button className="flex-1" variant="secondary" onClick={() => confirmRequest(false)} disabled={loading}>
+                                    Request {nearest.name?.split(' ')[0] || 'this mechanic'}
+                                </Button>
+                            )}
                             <Button className="flex-1" variant="secondary" onClick={() => setStatus('idle')}>
                                 Cancel
                             </Button>
@@ -338,8 +352,14 @@ export function SOS() {
                             <StatusTimeline currentStatus={requestStatus} />
                         </Card>
 
-                        {nearest && (
-                            <p className="sos-mech-name">Notified: <strong>{nearest.name}</strong></p>
+                        {nearest ? (
+                            <p className="sos-mech-name">
+                                {requestStatus === 'pending'
+                                    ? <>Broadcast to <strong>{notifiedCount || 'nearby'}</strong> mechanics</>
+                                    : <>Assigned: <strong>{nearest.name}</strong></>}
+                            </p>
+                        ) : requestStatus === 'pending' && notifiedCount > 0 && (
+                            <p className="sos-mech-name">Waiting for one of <strong>{notifiedCount}</strong> mechanics to accept</p>
                         )}
 
                         <div className="sos-actions sos-tracking-actions">

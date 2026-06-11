@@ -61,6 +61,12 @@ const run = async () => {
         await pool.query(updateSql);
         console.log('✓ Migrations applied');
 
+        const migrateV2Path = path.join(__dirname, '../../scripts/migrate-v2.sql');
+        if (fs.existsSync(migrateV2Path)) {
+            await pool.query(fs.readFileSync(migrateV2Path, 'utf8'));
+            console.log('✓ v2 migration applied');
+        }
+
         // Seed
         const bcrypt = require('bcryptjs');
         const passwordHash = await bcrypt.hash('password123', 10);
