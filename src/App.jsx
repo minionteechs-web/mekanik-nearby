@@ -17,9 +17,6 @@ import { Chat } from './pages/Chat';
 import { ResetPassword } from './pages/ResetPassword';
 import { TwoFactorSetup } from './pages/TwoFactorSetup';
 import { Terms } from './pages/Terms';
-import { Notifications } from './pages/Notifications';
-import { Bookings } from './pages/Bookings';
-import { Admin } from './pages/Admin';
 
 function App() {
     return (
@@ -44,9 +41,6 @@ function App() {
                             <Route path="/profile" element={<Profile />} />
                             <Route path="/two-factor-setup" element={<TwoFactorSetup />} />
                             <Route path="/activity" element={<Activity />} />
-                            <Route path="/notifications" element={<Notifications />} />
-                            <Route path="/bookings" element={<Bookings />} />
-                            <Route path="/admin" element={<Admin />} />
                             <Route path="/mechanic-dashboard" element={<MechanicDashboard />} />
                         </Route>
 

@@ -182,8 +182,6 @@ export const Profile = ({ navigation }) => {
     const [showPasswordForm, setShowPasswordForm] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
-    const [deletePassword, setDeletePassword] = useState('');
-    const [showDeleteForm, setShowDeleteForm] = useState(false);
 
     const refreshRoutes = async () => {
         setLoadingRoutes(true);
@@ -264,29 +262,6 @@ export const Profile = ({ navigation }) => {
         } catch (err) {
             Alert.alert('Error', err.response?.data?.message || 'Could not change password');
         }
-    };
-
-    const handleDeleteAccount = async () => {
-        if (!deletePassword) {
-            Alert.alert('Error', 'Enter your password to confirm deletion.');
-            return;
-        }
-        Alert.alert('Delete account', 'This permanently deletes your account and all data.', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Delete',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        await authApi.deleteAccount(deletePassword);
-                        await logout();
-                        navigation.replace('Login');
-                    } catch (err) {
-                        Alert.alert('Error', err.response?.data?.message || 'Could not delete account');
-                    }
-                },
-            },
-        ]);
     };
 
     const totalMechanics = savedRoutes.reduce((sum, r) => sum + (r.count || 0), 0);
@@ -546,26 +521,6 @@ export const Profile = ({ navigation }) => {
                         )}
                     </Card>
 
-                    <TouchableOpacity style={styles.settingRow} onPress={() => navigation.navigate('Notifications')}>
-                        <Bell size={22} color={colors.brand} />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.settingTitle}>Notification inbox</Text>
-                            <Text style={styles.settingSub}>SOS alerts and booking updates</Text>
-                        </View>
-                        <ChevronRight size={20} color={colors.textMuted} />
-                    </TouchableOpacity>
-
-                    {user?.role === 'driver' && (
-                        <TouchableOpacity style={styles.settingRow} onPress={() => navigation.navigate('Bookings')}>
-                            <Car size={22} color={colors.brand} />
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.settingTitle}>Bookings</Text>
-                                <Text style={styles.settingSub}>Schedule workshop visits</Text>
-                            </View>
-                            <ChevronRight size={20} color={colors.textMuted} />
-                        </TouchableOpacity>
-                    )}
-
                     <Card style={styles.helpCard}>
                         <HelpCircle size={22} color={colors.brand} />
                         <View style={{ flex: 1 }}>
@@ -574,25 +529,6 @@ export const Profile = ({ navigation }) => {
                                 Pull over safely, hazards on, share location, and use cached mechanics if you have no signal.
                             </Text>
                         </View>
-                    </Card>
-
-                    <Card style={{ marginBottom: SPACING.lg }}>
-                        {!showDeleteForm ? (
-                            <TouchableOpacity onPress={() => setShowDeleteForm(true)}>
-                                <Text style={{ color: colors.danger, fontWeight: '700' }}>Delete my account</Text>
-                            </TouchableOpacity>
-                        ) : (
-                            <View>
-                                <Text style={{ color: colors.textMuted, marginBottom: 12, fontSize: 13 }}>
-                                    Enter password to permanently delete your account (NDPR).
-                                </Text>
-                                <Input secureTextEntry placeholder="Password" value={deletePassword} onChangeText={setDeletePassword} />
-                                <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                                    <Button variant="secondary" onPress={handleDeleteAccount}>Confirm delete</Button>
-                                    <Button variant="secondary" onPress={() => setShowDeleteForm(false)}>Cancel</Button>
-                                </View>
-                            </View>
-                        )}
                     </Card>
 
                     <TouchableOpacity style={styles.logoutRow} onPress={handleLogout}>

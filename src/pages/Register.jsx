@@ -10,7 +10,7 @@ import { Input } from '../components/Input';
 
 import { Card } from '../components/Card';
 
-import { auth, initSocket } from '../utils/api';
+import { auth } from '../utils/api';
 
 import { BrandLogo } from '../components/BrandLogo';
 
@@ -255,7 +255,7 @@ export function Register() {
                 password: formData.password,
 
                 role: formData.role,
-                termsAccepted: true,
+
             };
 
 
@@ -288,7 +288,7 @@ export function Register() {
 
             localStorage.setItem('mekanik_user', JSON.stringify({ ...user, token }));
 
-            initSocket();
+
 
             if (user.role === 'mechanic') {
 

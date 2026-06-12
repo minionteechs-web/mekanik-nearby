@@ -19,8 +19,6 @@ import {
     Save,
 } from 'lucide-react';
 import { Card } from '../components/Card';
-import { Button } from '../components/Button';
-import { Input } from '../components/Input';
 import { ProfilePhotoPicker } from '../components/ProfilePhotoPicker';
 import { formatBytes } from '../utils/format';
 import { clearOfflineData } from '../utils/offline';
@@ -47,9 +45,6 @@ export function Profile() {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [changingPassword, setChangingPassword] = useState(false);
-    const [deletePassword, setDeletePassword] = useState('');
-    const [showDeleteForm, setShowDeleteForm] = useState(false);
-    const [deletingAccount, setDeletingAccount] = useState(false);
 
     const refreshRoutes = async () => {
         setLoadingRoutes(true);
@@ -114,41 +109,10 @@ export function Profile() {
         }
     };
 
-    const handleSavePrefs = async (updates) => {
+    const handleSavePrefs = (updates) => {
         const next = saveProfilePrefs({ ...prefs, ...updates });
         setPrefs(next);
-        try {
-            await auth.updateMe({
-                emergency_contact_name: next.emergencyName,
-                emergency_contact_phone: next.emergencyContact,
-                vehicle_info: {
-                    make: next.vehicleMake,
-                    model: next.vehicleModel,
-                    plate: next.vehiclePlate,
-                    color: next.vehicleColor,
-                },
-            });
-            showToast('Preferences saved', 'success');
-        } catch {
-            showToast('Saved locally — sync failed', 'info');
-        }
-    };
-
-    const handleDeleteAccount = async (e) => {
-        e.preventDefault();
-        if (!window.confirm('This permanently deletes your account and all data. Continue?')) return;
-        setDeletingAccount(true);
-        try {
-            await auth.deleteAccount(deletePassword);
-            disconnectSocket();
-            localStorage.removeItem('mekanik_user');
-            showToast('Account deleted', 'success');
-            navigate('/');
-        } catch (err) {
-            showToast(err.response?.data?.message || 'Could not delete account', 'error');
-        } finally {
-            setDeletingAccount(false);
-        }
+        showToast('Preferences saved', 'success');
     };
 
     const handleChangePassword = async (e) => {
@@ -453,68 +417,12 @@ export function Profile() {
                 </Card>
 
                 <h3 className="profile-section-label">Support</h3>
-                <Card className="profile-menu-item profile-setting-row" onClick={() => navigate('/notifications')} style={{ cursor: 'pointer' }}>
-                    <Bell size={22} color="var(--color-brand)" />
-                    <div className="profile-setting-row-body">
-                        <h4>Notification inbox</h4>
-                        <p>View SOS alerts, booking updates, and status changes</p>
-                    </div>
-                    <ChevronRight size={20} />
-                </Card>
-                {user.role === 'driver' && (
-                    <Card className="profile-menu-item profile-setting-row" onClick={() => navigate('/bookings')} style={{ cursor: 'pointer' }}>
-                        <Car size={22} color="var(--color-brand)" />
-                        <div className="profile-setting-row-body">
-                            <h4>Bookings</h4>
-                            <p>Schedule non-emergency workshop visits</p>
-                        </div>
-                        <ChevronRight size={20} />
-                    </Card>
-                )}
-                {user.role === 'admin' && (
-                    <Card className="profile-menu-item profile-setting-row" onClick={() => navigate('/admin')} style={{ cursor: 'pointer' }}>
-                        <Shield size={22} color="var(--color-brand)" />
-                        <div className="profile-setting-row-body">
-                            <h4>Admin panel</h4>
-                            <p>Verify mechanics, review reports, monitor SOS</p>
-                        </div>
-                        <ChevronRight size={20} />
-                    </Card>
-                )}
                 <Card className="profile-menu-item profile-setting-row">
                     <HelpCircle size={22} color="var(--color-brand)" />
                     <div className="profile-setting-row-body">
                         <h4>Breakdown safety tips</h4>
                         <p>Pull over safely, turn on hazards, share your live location, and call a cached mechanic if offline.</p>
                     </div>
-                </Card>
-
-                <h3 className="profile-section-label">Danger zone</h3>
-                <Card className="profile-settings-card">
-                    {!showDeleteForm ? (
-                        <button type="button" className="profile-clear-btn" onClick={() => setShowDeleteForm(true)}>
-                            <Trash2 size={16} /> Delete my account
-                        </button>
-                    ) : (
-                        <form onSubmit={handleDeleteAccount}>
-                            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                                Enter your password to permanently delete your account (NDPR right to erasure).
-                            </p>
-                            <Input
-                                type="password"
-                                placeholder="Your password"
-                                value={deletePassword}
-                                onChange={(e) => setDeletePassword(e.target.value)}
-                                required
-                            />
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                                <Button type="submit" variant="secondary" disabled={deletingAccount}>
-                                    {deletingAccount ? 'Deleting...' : 'Confirm delete'}
-                                </Button>
-                                <Button type="button" variant="secondary" onClick={() => setShowDeleteForm(false)}>Cancel</Button>
-                            </div>
-                        </form>
-                    )}
                 </Card>
 
                 <div className="profile-brand-footer">

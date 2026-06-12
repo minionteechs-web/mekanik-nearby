@@ -15,9 +15,6 @@ import { Profile } from './src/pages/Profile';
 import { MechanicDashboard } from './src/pages/MechanicDashboard';
 import { Chat } from './src/pages/Chat';
 import { TwoFactorSetup } from './src/pages/TwoFactorSetup';
-import { ResetPassword } from './src/pages/ResetPassword';
-import { Notifications } from './src/pages/Notifications';
-import { Bookings } from './src/pages/Bookings';
 import { MechanicOnboard } from './src/pages/MechanicOnboard';
 import { Activity } from './src/pages/Activity';
 import { Terms } from './src/pages/Terms';
@@ -68,9 +65,6 @@ function AppNavigation() {
                 <Stack.Screen name="MechanicOnboard" component={MechanicOnboard} />
                 <Stack.Screen name="Chat" component={Chat} />
                 <Stack.Screen name="TwoFactorSetup" component={TwoFactorSetup} />
-                <Stack.Screen name="ResetPassword" component={ResetPassword} />
-                <Stack.Screen name="Notifications" component={Notifications} />
-                <Stack.Screen name="Bookings" component={Bookings} />
             </Stack.Navigator>
         </NavigationContainer>
     );

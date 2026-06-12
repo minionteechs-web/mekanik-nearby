@@ -50,13 +50,10 @@ export function MechanicDashboard() {
 
     const loadData = async () => {
         try {
-            const [assignedRes, incomingRes] = await Promise.all([
-                requestsApi.getUserRequests(),
-                requestsApi.getIncoming(),
-            ]);
-            const pending = incomingRes.data;
-            const active = assignedRes.data.find((r) => ['accepted', 'en-route', 'arrived'].includes(r.status));
-            const completed = assignedRes.data.filter((r) => r.status === 'completed').length;
+            const response = await requestsApi.getUserRequests();
+            const pending = response.data.filter((r) => r.status === 'pending');
+            const active = response.data.find((r) => ['accepted', 'en-route', 'arrived'].includes(r.status));
+            const completed = response.data.filter((r) => r.status === 'completed').length;
             setIncomingRequests(pending);
             setStats({ completed });
             if (active) setActiveRequest(active);
@@ -68,15 +65,10 @@ export function MechanicDashboard() {
     const setupSocket = async () => {
         const socket = await initSocket();
         if (socket) {
-            const onNew = (data) => {
-                setIncomingRequests((prev) => {
-                    if (prev.some((r) => r.id === data.id)) return prev;
-                    return [data, ...prev];
-                });
+            socket.on('new_request', (data) => {
+                setIncomingRequests((prev) => [data, ...prev]);
                 showToast('New SOS request nearby!', 'info');
-            };
-            socket.on('new_request', onNew);
-            socket.on('new_broadcast_request', onNew);
+            });
             socket.on('status_updated', (data) => {
                 if (data.status === 'cancelled') {
                     setActiveRequest(null);

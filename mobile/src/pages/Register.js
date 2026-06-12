@@ -413,7 +413,7 @@ export const Register = ({ navigation }) => {
             password: form.password,
 
             role: form.role,
-            termsAccepted: true,
+
         };
 
 

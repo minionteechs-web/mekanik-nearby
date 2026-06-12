@@ -17,8 +17,6 @@ const verifyTotp = (code, secret) => {
 const db = require('../config/db');
 const path = require('path');
 const fs = require('fs');
-const { sendEmail } = require('../utils/emailService');
-const { sanitizeText } = require('../utils/sanitize');
 require('dotenv').config();
 
 const MECHANIC_SPECIALTIES = [
@@ -38,10 +36,6 @@ const shapeUser = (row) => ({
     role: row.role,
     is_2fa_enabled: row.is_2fa_enabled,
     avatar_url: row.avatar_url || null,
-    terms_accepted_at: row.terms_accepted_at || null,
-    emergency_contact_name: row.emergency_contact_name || null,
-    emergency_contact_phone: row.emergency_contact_phone || null,
-    vehicle_info: row.vehicle_info || {},
 });
 
 // @desc    Register a new user
@@ -60,13 +54,8 @@ exports.register = async (req, res) => {
         state,
         yearsExperience,
         certification,
-        termsAccepted,
     } = req.body;
     const userRole = ['driver', 'mechanic'].includes(role) ? role : 'driver';
-
-    if (!termsAccepted) {
-        return res.status(400).json({ message: 'You must accept the Terms of Service and Privacy Policy' });
-    }
 
     if (!username?.trim() || !email?.trim() || !password) {
         return res.status(400).json({ message: 'Name, email, and password are required' });
@@ -110,27 +99,29 @@ exports.register = async (req, res) => {
         const passwordHash = await bcrypt.hash(password, salt);
 
         const newUser = await db.query(
-            `INSERT INTO users (username, email, password_hash, phone, role, terms_accepted_at)
-             VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP) RETURNING *`,
+            'INSERT INTO users (username, email, password_hash, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [username.trim(), email.trim(), passwordHash, phone?.trim() || null, userRole]
         );
 
         const user = newUser.rows[0];
 
         if (userRole === 'mechanic') {
-            const yrs = yearsExperience ? parseInt(yearsExperience, 10) : null;
+            const certNote = certification?.trim()
+                ? `Cert: ${certification.trim()}${yearsExperience ? ` · ${yearsExperience}+ yrs` : ''}`
+                : yearsExperience
+                    ? `${yearsExperience}+ years experience`
+                    : null;
 
             await db.query(
-                `INSERT INTO mechanics (user_id, name, specialty, city, state, years_experience, certification, verification_status)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')`,
+                `INSERT INTO mechanics (user_id, name, specialty, city, state, address)
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
                 [
                     user.id,
                     workshopName.trim(),
                     specialty.trim(),
                     city.trim(),
                     state?.trim() || null,
-                    Number.isNaN(yrs) ? null : yrs,
-                    sanitizeText(certification, 300) || null,
+                    certNote,
                 ]
             );
         }
@@ -326,13 +317,7 @@ exports.getMe = async (req, res) => {
 // @route   PUT /api/auth/me
 // @access  Private
 exports.updateMe = async (req, res) => {
-    const {
-        username,
-        phone,
-        emergency_contact_name,
-        emergency_contact_phone,
-        vehicle_info,
-    } = req.body;
+    const { username, phone } = req.body;
 
     try {
         const current = await db.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
@@ -340,16 +325,8 @@ exports.updateMe = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        const row = current.rows[0];
-        const nextUsername = username?.trim() || row.username;
-        const nextPhone = phone !== undefined ? (phone?.trim() || null) : row.phone;
-        const nextEmergencyName = emergency_contact_name !== undefined
-            ? (sanitizeText(emergency_contact_name, 100) || null)
-            : row.emergency_contact_name;
-        const nextEmergencyPhone = emergency_contact_phone !== undefined
-            ? (emergency_contact_phone?.trim() || null)
-            : row.emergency_contact_phone;
-        const nextVehicleInfo = vehicle_info !== undefined ? vehicle_info : row.vehicle_info;
+        const nextUsername = username?.trim() || current.rows[0].username;
+        const nextPhone = phone !== undefined ? (phone?.trim() || null) : current.rows[0].phone;
 
         if (nextUsername.length < 2) {
             return res.status(400).json({ message: 'Username must be at least 2 characters' });
@@ -364,9 +341,8 @@ exports.updateMe = async (req, res) => {
         }
 
         const updated = await db.query(
-            `UPDATE users SET username = $1, phone = $2, emergency_contact_name = $3,
-             emergency_contact_phone = $4, vehicle_info = $5 WHERE id = $6 RETURNING *`,
-            [nextUsername, nextPhone, nextEmergencyName, nextEmergencyPhone, JSON.stringify(nextVehicleInfo || {}), req.user.id]
+            'UPDATE users SET username = $1, phone = $2 WHERE id = $3 RETURNING *',
+            [nextUsername, nextPhone, req.user.id]
         );
 
         res.json({ user: shapeUser(updated.rows[0]) });
@@ -468,13 +444,7 @@ exports.forgotPassword = async (req, res) => {
 
             const appUrl = process.env.APP_URL || 'http://localhost:5173';
             const resetUrl = `${appUrl}/reset-password?token=${token}`;
-
-            await sendEmail({
-                to: email,
-                subject: 'Reset your Mekanik Nearby password',
-                text: `Reset your password by visiting: ${resetUrl}\n\nThis link expires in 1 hour.`,
-                html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>.</p><p>Expires in 1 hour.</p>`,
-            });
+            console.log(`[Password Reset] ${email}: ${resetUrl}`);
         }
 
         res.json({ message: 'If that email exists, a reset link has been sent.' });
@@ -513,36 +483,6 @@ exports.resetPassword = async (req, res) => {
         );
 
         res.json({ message: 'Password updated successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
-
-// @desc    Delete account (NDPR self-service)
-// @route   DELETE /api/auth/me
-// @access  Private
-exports.deleteAccount = async (req, res) => {
-    const { password } = req.body;
-
-    if (!password) {
-        return res.status(400).json({ message: 'Password is required to delete your account' });
-    }
-
-    try {
-        const result = await db.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        const isMatch = await bcrypt.compare(password, result.rows[0].password_hash);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Incorrect password' });
-        }
-
-        await db.query('DELETE FROM users WHERE id = $1', [req.user.id]);
-
-        res.json({ message: 'Account deleted successfully' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });

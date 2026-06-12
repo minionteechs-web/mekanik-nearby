@@ -1,12 +1,6 @@
 const db = require('../config/db');
 const { notifyUser } = require('../utils/socketLogic');
 const { createNotification } = require('./notificationController');
-const { sendSms } = require('../utils/smsService');
-const {
-    canUsePostGISLocation,
-    haversineNearbyQuery,
-    postgisNearbyQuery,
-} = require('../utils/geoQuery');
 
 const VALID_STATUSES = ['pending', 'accepted', 'en-route', 'arrived', 'completed', 'cancelled'];
 const ACTIVE_DRIVER_STATUSES = ['pending', 'accepted', 'en-route', 'arrived'];
@@ -21,35 +15,16 @@ const ALLOWED_TRANSITIONS = {
     cancelled: [],
 };
 
-const findNearbyMechanicUserIds = async (lat, lng, radiusM = 50000) => {
-    const usePostGIS = await canUsePostGISLocation();
-    const query = usePostGIS ? postgisNearbyQuery : haversineNearbyQuery;
-    const params = usePostGIS ? [lng, lat, radiusM] : [lat, lng, radiusM];
-    const result = await db.query(query, params);
-    return result.rows.map((r) => r.user_id);
-};
-
-const notifyMechanicsSos = async (mechanicUserIds, request, title, body) => {
-    for (const mechanicId of mechanicUserIds) {
-        notifyUser(mechanicId, 'new_request', request);
-        notifyUser(mechanicId, 'new_broadcast_request', request);
-        await createNotification(mechanicId, 'new_request', title, body, { requestId: request.id });
-    }
-};
-
-// @desc    Create SOS — direct to mechanic or broadcast to nearby pool
+// @desc    Create a new service request (SOS)
 // @route   POST /api/requests
 // @access  Private (Driver)
 exports.createRequest = async (req, res) => {
-    const { mechanic_id, lat, lng, broadcast, radius } = req.body;
+    const { mechanic_id, lat, lng } = req.body;
     const driver_id = req.user.id;
 
-    if (lat == null || lng == null) {
-        return res.status(400).json({ message: 'lat and lng are required' });
+    if (!mechanic_id || lat == null || lng == null) {
+        return res.status(400).json({ message: 'mechanic_id, lat, and lng are required' });
     }
-
-    const isBroadcast = broadcast === true || !mechanic_id;
-    const radiusM = parseInt(radius, 10) || 50000;
 
     try {
         const openRequest = await db.query(
@@ -64,39 +39,6 @@ exports.createRequest = async (req, res) => {
             });
         }
 
-        if (isBroadcast) {
-            const nearbyIds = await findNearbyMechanicUserIds(lat, lng, radiusM);
-            if (nearbyIds.length === 0) {
-                return res.status(400).json({ message: 'No available mechanics nearby. Try again shortly.' });
-            }
-
-            const result = await db.query(
-                `INSERT INTO service_requests (driver_id, mechanic_id, driver_lat, driver_lng, status, is_broadcast, broadcast_radius_m)
-                 VALUES ($1, NULL, $2, $3, 'pending', TRUE, $4)
-                 RETURNING *`,
-                [driver_id, lat, lng, radiusM]
-            );
-            const request = result.rows[0];
-
-            await notifyMechanicsSos(
-                nearbyIds,
-                request,
-                'SOS nearby',
-                'A driver needs roadside help in your area.'
-            );
-
-            // SMS alert to first 5 mechanics (critical connectivity fallback)
-            const phoneResult = await db.query(
-                `SELECT phone FROM users WHERE id = ANY($1::int[]) AND phone IS NOT NULL LIMIT 5`,
-                [nearbyIds]
-            );
-            for (const row of phoneResult.rows) {
-                await sendSms(row.phone, 'Mekanik Nearby: SOS request nearby. Open the app to accept.');
-            }
-
-            return res.status(201).json({ ...request, notified_count: nearbyIds.length });
-        }
-
         const mechanicCheck = await db.query(
             `SELECT u.id FROM users u
              JOIN mechanics m ON m.user_id = u.id
@@ -108,46 +50,18 @@ exports.createRequest = async (req, res) => {
             return res.status(400).json({ message: 'Mechanic not found or unavailable' });
         }
 
-        const result = await db.query(
-            `INSERT INTO service_requests (driver_id, mechanic_id, driver_lat, driver_lng, status, is_broadcast)
-             VALUES ($1, $2, $3, $4, 'pending', FALSE)
-             RETURNING *`,
-            [driver_id, mechanic_id, lat, lng]
-        );
+        const query = `
+            INSERT INTO service_requests (driver_id, mechanic_id, driver_lat, driver_lng, status)
+            VALUES ($1, $2, $3, $4, 'pending')
+            RETURNING *
+        `;
+        const result = await db.query(query, [driver_id, mechanic_id, lat, lng]);
         const request = result.rows[0];
 
         notifyUser(mechanic_id, 'new_request', request);
         await createNotification(mechanic_id, 'new_request', 'New SOS Request', 'A driver needs roadside help nearby.', { requestId: request.id });
 
-        const mechPhone = await db.query('SELECT phone FROM users WHERE id = $1', [mechanic_id]);
-        if (mechPhone.rows[0]?.phone) {
-            await sendSms(mechPhone.rows[0].phone, 'Mekanik Nearby: New SOS request assigned to you. Open the app.');
-        }
-
         res.status(201).json(request);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
-
-// @desc    Incoming broadcast SOS for mechanics
-// @route   GET /api/requests/incoming
-// @access  Private (Mechanic)
-exports.getIncomingRequests = async (req, res) => {
-    const mechanic_id = req.user.id;
-
-    try {
-        const result = await db.query(
-            `SELECT sr.*, u.username as driver_name, u.phone as driver_phone
-             FROM service_requests sr
-             JOIN users u ON sr.driver_id = u.id
-             WHERE sr.status = 'pending'
-               AND (sr.mechanic_id = $1 OR (sr.is_broadcast = TRUE AND sr.mechanic_id IS NULL))
-             ORDER BY sr.requested_at DESC`,
-            [mechanic_id]
-        );
-        res.json(result.rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });
@@ -173,12 +87,9 @@ exports.getMyRequests = async (req, res) => {
             `;
         } else {
             query = `
-                SELECT sr.*, m.name as mechanic_name, m.id as mechanic_profile_id,
-                       CASE WHEN sr.status IN ('accepted', 'en-route', 'arrived', 'completed')
-                            THEN mu.phone ELSE NULL END as mechanic_phone
+                SELECT sr.*, m.name as mechanic_name, m.id as mechanic_profile_id
                 FROM service_requests sr
                 LEFT JOIN mechanics m ON m.user_id = sr.mechanic_id
-                LEFT JOIN users mu ON sr.mechanic_id = mu.id
                 WHERE sr.driver_id = $1
                 ORDER BY sr.requested_at DESC
             `;
@@ -192,47 +103,7 @@ exports.getMyRequests = async (req, res) => {
     }
 };
 
-// @desc    Get single request
-// @route   GET /api/requests/:id
-// @access  Private
-exports.getRequestById = async (req, res) => {
-    const requestId = req.params.id;
-    const userId = req.user.id;
-
-    try {
-        const result = await db.query(
-            `SELECT sr.*, m.name as mechanic_name, m.id as mechanic_profile_id,
-                    du.username as driver_name, du.phone as driver_phone,
-                    mu.phone as mechanic_phone
-             FROM service_requests sr
-             LEFT JOIN mechanics m ON m.user_id = sr.mechanic_id
-             LEFT JOIN users du ON sr.driver_id = du.id
-             LEFT JOIN users mu ON sr.mechanic_id = mu.id
-             WHERE sr.id = $1`,
-            [requestId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'Request not found' });
-        }
-
-        const request = result.rows[0];
-        const isParticipant =
-            Number(request.driver_id) === Number(userId) ||
-            Number(request.mechanic_id) === Number(userId);
-
-        if (!isParticipant && req.user.role !== 'admin') {
-            return res.status(403).json({ message: 'Not authorized' });
-        }
-
-        res.json(request);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
-
-// @desc    Accept a service request (direct or broadcast — first mechanic wins)
+// @desc    Accept a service request
 // @route   PUT /api/requests/:id/accept
 // @access  Private (Mechanic)
 exports.acceptRequest = async (req, res) => {
@@ -249,34 +120,21 @@ exports.acceptRequest = async (req, res) => {
             return res.status(409).json({ message: 'Finish your current job before accepting another' });
         }
 
-        const result = await db.query(
-            `UPDATE service_requests
-             SET status = 'accepted', mechanic_id = COALESCE(mechanic_id, $2)
-             WHERE id = $1
-               AND status = 'pending'
-               AND (mechanic_id IS NULL OR mechanic_id = $2)
-             RETURNING *`,
-            [requestId, mechanic_id]
-        );
+        const query = `
+            UPDATE service_requests
+            SET status = 'accepted'
+            WHERE id = $1 AND mechanic_id = $2 AND status = 'pending'
+            RETURNING *
+        `;
+        const result = await db.query(query, [requestId, mechanic_id]);
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'Request not found or already taken' });
+            return res.status(404).json({ message: 'Request not found or already accepted' });
         }
 
         const request = result.rows[0];
-
-        if (request.is_broadcast) {
-            notifyUser(request.driver_id, 'request_accepted', request);
-        } else {
-            notifyUser(request.driver_id, 'request_accepted', request);
-        }
-
+        notifyUser(request.driver_id, 'request_accepted', request);
         await createNotification(request.driver_id, 'request_accepted', 'Help is on the way', 'A mechanic accepted your SOS request.', { requestId: request.id });
-
-        const driverPhone = await db.query('SELECT phone FROM users WHERE id = $1', [request.driver_id]);
-        if (driverPhone.rows[0]?.phone) {
-            await sendSms(driverPhone.rows[0].phone, 'Mekanik Nearby: A mechanic accepted your SOS. Open the app to track them.');
-        }
 
         res.json(request);
     } catch (err) {
@@ -306,16 +164,14 @@ exports.cancelRequest = async (req, res) => {
         }
 
         const request = result.rows[0];
-        if (request.mechanic_id) {
-            notifyUser(request.mechanic_id, 'status_updated', request);
-            await createNotification(
-                request.mechanic_id,
-                'request_cancelled',
-                'Request cancelled',
-                'The driver cancelled the help request.',
-                { requestId: request.id }
-            );
-        }
+        notifyUser(request.mechanic_id, 'status_updated', request);
+        await createNotification(
+            request.mechanic_id,
+            'request_cancelled',
+            'Request cancelled',
+            'The driver cancelled the help request.',
+            { requestId: request.id }
+        );
 
         res.json(request);
     } catch (err) {
@@ -354,14 +210,14 @@ exports.updateStatus = async (req, res) => {
             });
         }
 
+        const query = `
+            UPDATE service_requests
+            SET status = $1, resolved_at = $2
+            WHERE id = $3 AND mechanic_id = $4
+            RETURNING *
+        `;
         const resolvedAt = ['completed', 'cancelled'].includes(status) ? new Date() : null;
-        const result = await db.query(
-            `UPDATE service_requests
-             SET status = $1, resolved_at = $2
-             WHERE id = $3 AND mechanic_id = $4
-             RETURNING *`,
-            [status, resolvedAt, requestId, mechanic_id]
-        );
+        const result = await db.query(query, [status, resolvedAt, requestId, mechanic_id]);
 
         const request = result.rows[0];
         notifyUser(request.driver_id, 'status_updated', request);
