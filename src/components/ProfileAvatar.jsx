@@ -1,4 +1,4 @@
-import { getProfileInitials, getProfileColor } from '../utils/profileAvatar';
+import { getProfileInitials, getProfileColor, getAvatarMediaUrl } from '../utils/profileAvatar';
 import { getMediaUrl } from '../utils/api';
 import './ProfileAvatar.css';
 
@@ -13,7 +13,7 @@ export function ProfileAvatar({
 }) {
     const initials = getProfileInitials(name);
     const color = getProfileColor(name);
-    const imageSrc = avatarUrl ? getMediaUrl(avatarUrl) : null;
+    const imageSrc = avatarUrl ? getAvatarMediaUrl(avatarUrl, getMediaUrl) : null;
     const Tag = onClick ? 'button' : 'div';
 
     return (
@@ -31,7 +31,13 @@ export function ProfileAvatar({
             aria-label={title || `Profile: ${name}`}
         >
             {imageSrc ? (
-                <img src={imageSrc} alt="" className="profile-avatar-img" draggable={false} />
+                <img
+                    key={imageSrc}
+                    src={imageSrc}
+                    alt=""
+                    className="profile-avatar-img"
+                    draggable={false}
+                />
             ) : (
                 initials
             )}

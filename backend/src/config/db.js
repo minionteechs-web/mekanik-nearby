@@ -1,44 +1,45 @@
-const { Pool } = require('pg');
 require('dotenv').config();
 
 const isCloudDb = Boolean(process.env.DATABASE_URL);
 
-// Strip sslmode from URL — pg v8 treats require as verify-full which can cause ECONNRESET on some networks
-const getConnectionString = () => {
-    if (!process.env.DATABASE_URL) return null;
-    const url = new URL(process.env.DATABASE_URL);
-    url.searchParams.delete('sslmode');
-    if (!url.searchParams.has('uselibpqcompat')) {
-        url.searchParams.set('uselibpqcompat', 'true');
-    }
-    return url.toString();
-};
+let pool;
 
-const poolConfig = isCloudDb
-    ? {
-        connectionString: getConnectionString(),
-        ssl: { rejectUnauthorized: false },
-        connectionTimeoutMillis: 60000,
+if (isCloudDb) {
+    // Neon over WebSockets — works when direct TCP/5432 is blocked on the network
+    const { Pool, neonConfig } = require('@neondatabase/serverless');
+    const ws = require('ws');
+
+    neonConfig.webSocketConstructor = ws;
+
+    pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
         max: 5,
-    }
-    : {
+        connectionTimeoutMillis: 30000,
+    });
+
+    console.log('Database: Neon (WebSocket transport)');
+} else {
+    const { Pool } = require('pg');
+
+    pool = new Pool({
         user: process.env.DB_USER,
         host: process.env.DB_HOST,
         database: process.env.DB_NAME,
         password: process.env.DB_PASSWORD,
         port: process.env.DB_PORT,
         ssl: false,
-    };
+        max: 5,
+    });
 
-const pool = new Pool(poolConfig);
+    console.log(`Database: local PostgreSQL (${process.env.DB_HOST || 'localhost'})`);
+}
 
 pool.on('connect', () => {
-    console.log('PostgreSQL Pool Connected');
+    console.log('PostgreSQL pool connected');
 });
 
 pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
-    process.exit(-1);
 });
 
 module.exports = {

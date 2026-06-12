@@ -33,22 +33,29 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-// Static for uploads
+// Static uploads — avatar filenames include a timestamp so long cache is safe
+app.use(
+    '/uploads/avatars',
+    express.static(path.join(__dirname, '../uploads/avatars'), {
+        maxAge: '365d',
+        immutable: true,
+        etag: true,
+    })
+);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Mekanik Nearby API' });
 });
 
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'OK', timestamp: new Date() });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ message: 'Something went wrong!' });
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
 
 module.exports = app;

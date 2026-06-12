@@ -28,3 +28,28 @@ export function getProfileColor(name) {
     }
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
+
+export function getAvatarCacheKey(path) {
+    if (!path) return '';
+    const match = String(path).match(/avatar-\d+-(\d+)\./);
+    return match ? match[1] : String(path).split('/').pop() || path;
+}
+
+export function getAvatarMediaUrl(path, getMediaUrl) {
+    if (!path) return '';
+    const base = getMediaUrl(path);
+    const key = getAvatarCacheKey(path);
+    const sep = base.includes('?') ? '&' : '?';
+    return `${base}${sep}v=${encodeURIComponent(key)}`;
+}
+
+export function mergeUserPreservingAvatar(local, remote) {
+    if (!remote) return local;
+    const merged = { ...local, ...remote };
+    const localKey = getAvatarCacheKey(local?.avatar_url);
+    const remoteKey = getAvatarCacheKey(remote?.avatar_url);
+    if (localKey && (!remoteKey || localKey > remoteKey)) {
+        merged.avatar_url = local.avatar_url;
+    }
+    return merged;
+}

@@ -8,6 +8,7 @@ import { mechanics as mechanicsApi, initSocket } from '../utils/api';
 import { useToast } from '../components/Toast';
 import { getGreeting } from '../utils/format';
 import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
+import { getStoredUser, subscribeToUserUpdates } from '../utils/profilePrefs';
 import './Home.css';
 
 export function Home() {
@@ -42,32 +43,46 @@ export function Home() {
         }
     };
 
-    useEffect(() => {
-        const userStr = localStorage.getItem('mekanik_user');
-        if (!userStr) {
+    const applyUser = (userData) => {
+        if (!userData) {
             navigate('/login');
             return;
         }
-        const userData = JSON.parse(userStr);
         setUserName(userData.username || 'Driver');
         setUserAvatar(userData.avatar_url || null);
+    };
+
+    useEffect(() => {
+        const stored = getStoredUser();
+        if (!stored) {
+            navigate('/login');
+            return undefined;
+        }
+        applyUser(stored);
+        const unsubscribe = subscribeToUserUpdates(applyUser);
         const socket = initSocket();
         loadLocationAndMechanics();
 
+        let onAccepted;
+        let onStatus;
         if (socket) {
-            const onAccepted = () => showToast('Mechanic accepted your SOS — open Activity to track', 'success');
-            const onStatus = (data) => {
+            onAccepted = () => showToast('Mechanic accepted your SOS — open Activity to track', 'success');
+            onStatus = (data) => {
                 if (['en-route', 'arrived', 'completed'].includes(data.status)) {
                     showToast(`Help request: ${data.status.replace('-', ' ')}`, 'info');
                 }
             };
             socket.on('request_accepted', onAccepted);
             socket.on('status_updated', onStatus);
-            return () => {
+        }
+
+        return () => {
+            unsubscribe();
+            if (socket && onAccepted) {
                 socket.off('request_accepted', onAccepted);
                 socket.off('status_updated', onStatus);
-            };
-        }
+            }
+        };
     }, [navigate, showToast]);
 
     const previewMechanics = sheetExpanded ? nearbyMechanics : nearbyMechanics.slice(0, 2);

@@ -1,11 +1,15 @@
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, Search, ShieldAlert, ClipboardList, Wrench } from 'lucide-react';
 import { ProfileAvatar } from './ProfileAvatar';
+import { getStoredUser, subscribeToUserUpdates } from '../utils/profilePrefs';
 import './BottomNav.css';
 
 export function BottomNav() {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('mekanik_user') || 'null');
+    const [user, setUser] = useState(() => getStoredUser());
+
+    useEffect(() => subscribeToUserUpdates(setUser), []);
     const isMechanic = user?.role === 'mechanic';
 
     if (!user) return null;

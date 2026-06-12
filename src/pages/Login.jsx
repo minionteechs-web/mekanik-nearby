@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Card } from '../components/Card';
 import { auth, initSocket } from '../utils/api';
+import { setStoredUser } from '../utils/profilePrefs';
 import { refreshUserLocation } from '../utils/location';
 import { BrandLogo } from '../components/BrandLogo';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -45,7 +46,7 @@ export function Login() {
             }
 
             const { token, user } = response.data;
-            localStorage.setItem('mekanik_user', JSON.stringify({ ...user, token }));
+            setStoredUser({ ...user, token });
             initSocket();
             refreshUserLocation().catch(() => {});
             navigatePostLogin(user);
@@ -69,7 +70,7 @@ export function Login() {
         try {
             const response = await auth.verify2FA({ token: preAuthToken, code: twoFACode });
             const { token, user } = response.data;
-            localStorage.setItem('mekanik_user', JSON.stringify({ ...user, token }));
+            setStoredUser({ ...user, token });
             initSocket();
             refreshUserLocation().catch(() => {});
             navigatePostLogin(user);

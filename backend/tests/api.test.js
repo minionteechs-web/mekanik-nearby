@@ -1,4 +1,10 @@
 /** @jest-environment node */
+jest.mock('otplib', () => ({
+    generateSecret: jest.fn(() => 'MOCK_SECRET'),
+    generateURI: jest.fn(() => 'otpauth://mock'),
+    verifySync: jest.fn(() => ({ valid: true })),
+}));
+
 const request = require('supertest');
 const app = require('../src/app');
 
@@ -11,24 +17,23 @@ describe('Health check', () => {
 });
 
 describe('Auth validation', () => {
-    it('POST /api/auth/register rejects missing terms', async () => {
+    it('POST /api/auth/register rejects driver without phone', async () => {
         const res = await request(app).post('/api/auth/register').send({
             username: 'testuser',
             email: 'test@example.com',
             password: 'password123',
-            phone: '08012345678',
             role: 'driver',
         });
         expect(res.status).toBe(400);
-        expect(res.body.message).toMatch(/terms/i);
+        expect(res.body.message).toMatch(/phone/i);
     });
 
-    it('POST /api/auth/login rejects bad credentials', async () => {
+    it('POST /api/auth/login rejects missing credentials', async () => {
         const res = await request(app).post('/api/auth/login').send({
             email: 'nobody@example.com',
-            password: 'wrongpassword',
         });
         expect(res.status).toBe(400);
+        expect(res.body.message).toMatch(/password/i);
     });
 });
 

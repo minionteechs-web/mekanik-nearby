@@ -25,6 +25,7 @@ import { clearOfflineData } from '../utils/offline';
 import { auth, disconnectSocket } from '../utils/api';
 import { listSavedRoutes, deleteSavedRoute, clearAllRoutes } from '../utils/routeStorage';
 import { getProfilePrefs, saveProfilePrefs, updateStoredUser } from '../utils/profilePrefs';
+import { mergeUserPreservingAvatar } from '../utils/profileAvatar';
 import { useToast } from '../components/Toast';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BrandLogo } from '../components/BrandLogo';
@@ -66,15 +67,21 @@ export function Profile() {
         setPrefs(getProfilePrefs());
         refreshRoutes();
 
+        let cancelled = false;
         auth.getMe()
             .then((res) => {
-                const fresh = { ...parsed, ...res.data.user };
+                if (cancelled) return;
+                const fresh = mergeUserPreservingAvatar(parsed, res.data.user);
                 setUser(fresh);
                 setUsername(fresh.username || '');
                 setPhone(fresh.phone || '');
-                updateStoredUser(res.data.user);
+                updateStoredUser(fresh);
             })
             .catch(() => {});
+
+        return () => {
+            cancelled = true;
+        };
     }, [navigate]);
 
     const handleLogout = () => {
@@ -99,7 +106,7 @@ export function Profile() {
         setSavingAccount(true);
         try {
             const res = await auth.updateMe({ username: username.trim(), phone: phone.trim() });
-            const next = updateStoredUser(res.data.user);
+            const next = updateStoredUser(mergeUserPreservingAvatar(user, res.data.user));
             setUser(next);
             showToast('Account updated', 'success');
         } catch (err) {

@@ -31,6 +31,7 @@ const updateDb = async () => {
 
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP WITH TIME ZONE;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
             CREATE TABLE IF NOT EXISTS notifications (
                 id SERIAL PRIMARY KEY,

@@ -4,11 +4,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'lucide-react-native';
 import { ProfileAvatar } from './ProfileAvatar';
 import { auth } from '../utils/api';
+import { useAuth } from '../utils/authContext';
 import { useTheme } from '../utils/themeContext';
 import { SPACING } from '../constants/theme';
 
 export const ProfilePhotoPicker = ({ name, avatarUrl, onUpdated, size = 88 }) => {
     const { colors } = useTheme();
+    const { updateUser } = useAuth();
     const [uploading, setUploading] = useState(false);
 
     const pickAndUpload = async () => {
@@ -42,7 +44,8 @@ export const ProfilePhotoPicker = ({ name, avatarUrl, onUpdated, size = 88 }) =>
             });
 
             const res = await auth.uploadAvatar(formData);
-            onUpdated?.(res.data.user);
+            const next = await updateUser(res.data.user);
+            onUpdated?.(next);
             Alert.alert('Updated', 'Profile photo saved.');
         } catch (err) {
             Alert.alert('Upload failed', err.response?.data?.message || 'Could not upload photo');

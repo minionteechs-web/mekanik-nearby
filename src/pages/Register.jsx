@@ -11,6 +11,7 @@ import { Input } from '../components/Input';
 import { Card } from '../components/Card';
 
 import { auth } from '../utils/api';
+import { setStoredUser } from '../utils/profilePrefs';
 
 import { BrandLogo } from '../components/BrandLogo';
 
@@ -286,7 +287,7 @@ export function Register() {
 
             const { token, user } = response.data;
 
-            localStorage.setItem('mekanik_user', JSON.stringify({ ...user, token }));
+            setStoredUser({ ...user, token });
 
 
 

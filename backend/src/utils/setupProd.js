@@ -22,6 +22,7 @@ const run = async () => {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP WITH TIME ZONE;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
             CREATE TABLE IF NOT EXISTS messages (
                 id SERIAL PRIMARY KEY,

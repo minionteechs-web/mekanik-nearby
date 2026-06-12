@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View, Image } from 'react-native';
-import { getProfileInitials, getProfileColor } from '../utils/profileAvatar';
+import { getProfileInitials, getProfileColor, getAvatarMediaUrl } from '../utils/profileAvatar';
 import { getMediaUrl } from '../utils/api';
 
 export const ProfileAvatar = ({
@@ -14,7 +14,7 @@ export const ProfileAvatar = ({
     const initials = getProfileInitials(name);
     const color = getProfileColor(name);
     const fontSize = Math.max(10, Math.round(size * 0.36));
-    const imageSrc = avatarUrl ? getMediaUrl(avatarUrl) : null;
+    const imageSrc = avatarUrl ? getAvatarMediaUrl(avatarUrl, getMediaUrl) : null;
 
     const content = (
         <View
@@ -31,7 +31,11 @@ export const ProfileAvatar = ({
             ]}
         >
             {imageSrc ? (
-                <Image source={{ uri: imageSrc }} style={{ width: size, height: size, borderRadius: size / 2 }} />
+                <Image
+                    key={imageSrc}
+                    source={{ uri: imageSrc }}
+                    style={{ width: size, height: size, borderRadius: size / 2 }}
+                />
             ) : (
                 <Text style={[styles.text, { fontSize }]}>{initials}</Text>
             )}

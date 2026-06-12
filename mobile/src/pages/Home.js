@@ -15,8 +15,8 @@ import { useThemedStyles } from '../hooks/useThemedStyles';
 const logoSource = require('../../assets/logo.png');
 import { refreshUserLocation, getLocationErrorMessage } from '../utils/location';
 import { openLocationSettings } from '../utils/geo';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_REGION } from '../constants/mapStyles';
+import { useAuth } from '../utils/authContext';
 
 const createStyles = (colors) => ({
     container: { flex: 1, backgroundColor: colors.bgDark },
@@ -120,7 +120,7 @@ const createStyles = (colors) => ({
 export const Home = ({ navigation }) => {
     const styles = useThemedStyles(createStyles);
     const { colors } = useTheme();
-    const [user, setUser] = useState(null);
+    const { user } = useAuth();
     const [nearbyMechanics, setNearbyMechanics] = useState([]);
     const [location, setLocation] = useState(null);
     const [locationLabel, setLocationLabel] = useState('Locating you...');
@@ -131,7 +131,6 @@ export const Home = ({ navigation }) => {
     const [liveUpdate, setLiveUpdate] = useState('');
 
     useEffect(() => {
-        loadUserData();
         setupLocationAndMechanics();
 
         let socket;
@@ -160,11 +159,6 @@ export const Home = ({ navigation }) => {
             }
         };
     }, []);
-
-    const loadUserData = async () => {
-        const userJson = await AsyncStorage.getItem('user');
-        if (userJson) setUser(JSON.parse(userJson));
-    };
 
     const setupLocationAndMechanics = async () => {
         setLoading(true);

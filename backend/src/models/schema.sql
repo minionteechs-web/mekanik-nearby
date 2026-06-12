@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(20) DEFAULT 'driver', -- 'driver' or 'mechanic'
     is_2fa_enabled BOOLEAN DEFAULT FALSE,
     two_factor_secret TEXT,
+    avatar_url TEXT,
+    reset_token TEXT,
+    reset_expires TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

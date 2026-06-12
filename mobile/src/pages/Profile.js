@@ -36,6 +36,7 @@ import { auth as authApi } from '../utils/api';
 import { listSavedRoutes, deleteSavedRoute, clearAllRoutes, clearOfflineData } from '../utils/storage';
 import { formatBytes } from '../utils/format';
 import { getProfilePrefs, saveProfilePrefs } from '../utils/profilePrefs';
+import { mergeUserPreservingAvatar } from '../utils/profileAvatar';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BrandLogo } from '../components/BrandLogo';
@@ -198,9 +199,10 @@ export const Profile = ({ navigation }) => {
             refreshRoutes();
             try {
                 const res = await authApi.getMe();
-                await updateUser(res.data.user);
-                setUsername(res.data.user.username || '');
-                setPhone(res.data.user.phone || '');
+                const merged = mergeUserPreservingAvatar(user, res.data.user);
+                await updateUser(merged);
+                setUsername(merged.username || '');
+                setPhone(merged.phone || '');
             } catch {
                 // offline or session issue — keep cached user
             }
@@ -233,7 +235,7 @@ export const Profile = ({ navigation }) => {
         setSavingAccount(true);
         try {
             const res = await authApi.updateMe({ username: username.trim(), phone: phone.trim() });
-            await updateUser(res.data.user);
+            await updateUser(mergeUserPreservingAvatar(user, res.data.user));
             Alert.alert('Saved', 'Account updated.');
         } catch (err) {
             Alert.alert('Error', err.response?.data?.message || 'Could not update account');
